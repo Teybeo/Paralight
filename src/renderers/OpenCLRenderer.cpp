@@ -3,7 +3,7 @@
 #include "objects/Sphere.h"
 #include "objects/Plane.h"
 #include "objects/Triangle.h"
-#include "SceneAdapter.h"
+#include "opencl/SceneAdapter.h"
 
 #include <fstream>
 #include <SDL_timer.h>

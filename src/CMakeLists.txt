@@ -45,7 +45,7 @@ set(SOURCE_FILES ${SOURCE_FILES}
         opencl/Program.cpp opencl/Program.h
         opencl/ProgramBuilder.cpp opencl/ProgramBuilder.h
         opencl/OpenCLPlatformList.cpp opencl/OpenCLPlatformList.h
-        renderers/SceneAdapter.cpp renderers/SceneAdapter.h)
+        opencl/SceneAdapter.cpp opencl/SceneAdapter.h)
 
 set(SOURCE_FILES ${SOURCE_FILES}
         gui/Gui.cpp gui/Gui.h

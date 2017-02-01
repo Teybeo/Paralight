@@ -7,7 +7,7 @@
 #include "opencl/Program.h"
 #include "opencl/OpenCLPlatformList.h"
 #include "CL/cl.hpp"
-#include "SceneAdapter.h"
+#include "opencl/SceneAdapter.h"
 
 // See render.h for layout/alignement
 struct CLOptions {
