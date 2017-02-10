@@ -38,7 +38,6 @@ public:
     size_t height = 0;
 
     Texture(const std::string& path, bool store_in_linear = true);
-    Texture(const Texture& other);
     ~Texture();
 
     Vec3 Evaluate(const Vec3& uv) override;

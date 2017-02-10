@@ -51,13 +51,12 @@ private:
     cl::Buffer image_buffer;
     cl::Buffer image_info_buffer;
     cl::Image2D env_map_image;
-    std::map<std::string, char> image_index_cache;
     CLOptions clOptions;
-    SceneAdapter adapter;
 
     bool reload_kernel = false;
     bool update_option = false;
     bool use_fast_math = true;
+
     const int MAX_IMAGE_COUNT = 200;
     unsigned char image_count = 0;
 
@@ -67,7 +66,9 @@ public:
 
     ~OpenCLRenderer() override;
 
-    void Draw();
+    void Draw() override;
+
+    void Update() override;
 
     void TracePixel(int x, int y, bool picking);
 
@@ -85,22 +86,28 @@ public:
 
     static const char* GetCLErrorString(int code);
 
-    void Update() override;
-
 private:
 
-    void KeyEvent(SDL_Keysym keysym, SDL_EventType type);
-    void UpdateCLScene();
-    void UpdateCLOptions();
+    void CreateRenderKernel(cl::Program& prog);
+    void UpdateRenderKernel();
 
+    void CreateEnvMapImage(std::unique_ptr<TextureFloat>& env_map);
+    void UpdateEnvMap();
 
-    cl::Buffer CreateBuffer(cl_mem_flags flags, size_t size, const void* data = nullptr);
+    void CreateSceneBuffers(const Scene* scene);
+    void UpdateSceneBuffers();
 
-    void dump_program(std::string filename);
+    void UpdateOptionsBuffer();
+
+    void SetKernelArguments(cl::Kernel& kernel) const;
+
+    void KeyEvent(SDL_Keysym keysym, SDL_EventType type) override;
+
+    template <typename T>
+    cl::Buffer CreateBuffer(std::vector<T> vec, cl_mem_flags flags);
 
     static void CL_CALLBACK debugCallback (const char *errinfo, const void *private_info, size_t cb, void *user_data);
 
-    cl::Kernel CreateRenderKernel() const;
 };
 
 #endif //OPENCL_OPENCLRENDERER_H

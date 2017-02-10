@@ -8,13 +8,20 @@
 
 #include <GL/gl.h>
 #include <iostream>
+#include "tinydir/tinydir.h"
+
+using std::string;
+using std::vector;
 
 static void ShowBVHTree(bool* opened, const BVH& bvh);
 
+int GetEnvMapIndex(const string& env_map, vector<string> env_map_array);
+vector<string> GetEnvMapArray(const char* env_map_dir);
+
 using std::shared_ptr;
 
-GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer) :
-    options(options), window{window}, renderer(renderer)
+GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* scene) :
+    scene{scene}, options(options), window{window}, renderer(renderer)
 {
     // Setup ImGui binding
     ImGui_ImplSdl_Init(window);
@@ -24,6 +31,9 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer) :
 
     cout << io.Fonts->Fonts.size() << " fonts" << endl;
 
+    env_map_array = GetEnvMapArray(env_map_dir);
+    env_map_index = GetEnvMapIndex(scene->env_map->path, env_map_array);
+    
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
     window_size = ImVec2 {w * 0.9f, h * 0.9f};
@@ -49,9 +59,18 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer) :
 }
 
 void GUI::Update() {
-    if (has_changed || material_has_changed)
-        options->options_changed = true;
 
+    scene->has_changed = false;
+
+    if (material_has_changed) {
+        scene->has_changed = true;
+    }
+
+    if (options_has_changed)
+        options->has_changed = true;
+
+    material_has_changed = false;
+    options_has_changed = false;
 }
 
 void GUI::Draw() {
@@ -59,9 +78,6 @@ void GUI::Draw() {
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
     window_size = ImVec2 {w * 0.9f, h * 0.9f};
-
-    has_changed = false;
-    material_has_changed = false;
 
     ImGui_ImplSdl_NewFrame(window);
 
@@ -116,14 +132,14 @@ void GUI::showRendererSelection(bool cpp) {
         event.type = SDL_USEREVENT;
         event.user.code = BaseRenderer::EVENT_CPP_RENDERER;
         SDL_PushEvent(&event);
-        has_changed = true;
+//        has_changed = true;
     }
     if (ImGui::RadioButton("OpenCL", !cpp)) {
         SDL_Event event;
         event.type = SDL_USEREVENT;
         event.user.code = BaseRenderer::EVENT_CL_RENDERER;
         SDL_PushEvent(&event);
-        has_changed = true;
+//        has_changed = true;
     }
 }
 
@@ -167,32 +183,58 @@ void GUI::showOpenCLSettings() {
             event.user.data1 = &selected_platform;
             event.user.data2 = &selected_device;
             SDL_PushEvent(&event);
-            has_changed = true;
         }
         ImGui::TreePop();
     }
 }
 
+bool item_getter(void* data, int current_index, const char** name) {
+    vector<string> env_map_array = *(vector<string>*)data;
+    string env_map = env_map_array[current_index];
+    // Remove the folder subpaths for display
+    env_map = env_map.substr(env_map.find_last_of("/\\") + 1);
+    *name = env_map.c_str();
+    return true;
+}
+
 void GUI::showLightingSettings() {
+
+    scene->env_map_has_changed = false;
+
     if (ImGui::CollapsingHeader("Lighting", nullptr, true, true)) {
+
+        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
+
+        int index = env_map_index;
+        ImGui::Combo("Environnement Map", &index, item_getter, &env_map_array, (int) env_map_array.size());
+
+        if (index != env_map_index) {
+            env_map_index = index;
+            scene->env_map = std::unique_ptr<TextureFloat>( new TextureFloat {env_map_array[env_map_index]});
+            scene->env_map_has_changed = true;
+        }
+
+        ImGui::PopItemWidth();
+
         bool lambertian = (bool) (options->brdf_bitfield & LAMBERTIAN);
         bool microfacet = (bool) (options->brdf_bitfield & MICROFACET);
         if (ImGui::Checkbox("Lambertian BRDF", &lambertian)) {
             options->brdf_bitfield ^= LAMBERTIAN;
-            has_changed = true;
+            options_has_changed = true;
         }
         if (ImGui::Checkbox("Microfacet BRDF", &microfacet)) {
             options->brdf_bitfield ^= MICROFACET;
-            has_changed = true;
+            options_has_changed = true;
         }
-        has_changed |= ImGui::Checkbox("Tonemapping", &options->use_tonemapping);
-        has_changed |= ImGui::Checkbox("Emissive lighting", &options->use_emissive_lighting);
-        has_changed |= ImGui::Checkbox("Distant Environnment lighting", &options->use_distant_env_lighting);
-        has_changed |= ImGui::Checkbox("Debug", &renderer->debug);
+        options_has_changed |= ImGui::Checkbox("Tonemapping", &options->use_tonemapping);
+        options_has_changed |= ImGui::Checkbox("Emissive lighting", &options->use_emissive_lighting);
+        options_has_changed |= ImGui::Checkbox("Distant Environnment lighting", &options->use_distant_env_lighting);
+        options_has_changed |= ImGui::Checkbox("Debug", &renderer->debug);
         if (ImGui::SliderInt("Depth target", &options->depth_target, 0, 30, "%.0f")) {
-            has_changed = true;
+            options_has_changed = true;
         }
     }
+
 }
 
 //TODO: Maybe have a member or friend function on objects that present and set the state directly ?
@@ -208,7 +250,6 @@ void GUI::showObjectSettings() {
 //        Vec3 origin = object->origin;
 //        if (ImGui::SliderFloat3("Object position", &origin.x, -30.0f, 30.0f)) {
 //            object->origin = origin;
-//            has_changed = true;
 //        }
 
         Plane* p = dynamic_cast<Plane*>(object->shape);
@@ -217,7 +258,6 @@ void GUI::showObjectSettings() {
             if (ImGui::SliderFloat3("Plane normal", &normal.x, -1.0f, 1.0f)) {
                 normal = normal.normalize();
                 p->normal = normal;
-                has_changed = true;
             }
         }
     }
@@ -262,7 +302,7 @@ void GUI::showTextureSettings(std::shared_ptr<ITexture> texture, const char* tex
 
     if (scalar_tex != nullptr) {
 
-        // Our renderers consider colors to be in Linear space and convert them to sRGB at the end (gamma correction)
+        // The renderers consider colors to be in Linear space and convert them to sRGB at the end (gamma correction)
         // ImGui considers colors to be already in sRGB because it doesn't apply gamma correction
         // To keep color consistent, we simply convert them to sRGB before sending them to ImGui and convert them back after
 
@@ -279,7 +319,7 @@ void GUI::showTextureSettings(std::shared_ptr<ITexture> texture, const char* tex
 
     if (scalar != nullptr) {
 
-        // Our renderers consider colors to be in Linear space and convert them to sRGB at the end (gamma correction)
+        // The renderers consider colors to be in Linear space and convert them to sRGB at the end (gamma correction)
         // ImGui considers colors to be already in sRGB because it doesn't apply gamma correction
         // To keep color consistent, we simply convert them to sRGB before sending them to ImGui and convert them back after
 
@@ -301,6 +341,38 @@ void GUI::showTextureSettings(std::shared_ptr<ITexture> texture, const char* tex
     if (tex_float != nullptr) {
         ImGui::Text(tex_float->path.c_str());
     }
+}
+
+vector<string> GetEnvMapArray(const char* env_map_dir) {
+
+    tinydir_dir dir;
+    tinydir_open_sorted(&dir, env_map_dir);
+
+    vector<string> env_map_array;
+
+    for (size_t i = 0; i < dir.n_files; i++) {
+
+        tinydir_file file;
+        tinydir_readfile_n(&dir, &file, i);
+
+        if (strcmp(file.extension, "hdr") == 0) {
+            string temp { env_map_dir };
+            temp += file.name;
+            env_map_array.push_back(temp);
+        }
+    }
+
+    tinydir_close(&dir);
+
+    return env_map_array;
+}
+
+int GetEnvMapIndex(const string& env_map, vector<string> env_map_array) {
+    for (int i = 0; i < (int) env_map_array.size(); ++i) {
+        if (env_map_array[i] == env_map)
+            return i;
+    }
+    return 0;
 }
 
 /*

@@ -29,8 +29,7 @@ Scene::Scene() {
 //    std::string env = "st_nicolaus_church_interior.hdr";
 //    std::string env = "Sponza.hdr";
 
-    //TODO: unique_ptr here
-    env_map = new TextureFloat {env_dir + env};
+    env_map = std::unique_ptr<TextureFloat>( new TextureFloat {env_dir + env});
 
 //    Load_CornellBox();
 //    Load_SphereGrid(2);
@@ -112,12 +111,13 @@ void Scene::Load_TriMesh() {
 
     std::string prefix = "../../models/";
 
-//    std::string file = "blender_tests/cube.obj";
+    std::string file = "blender_tests/cube.obj";
 //    std::string file = "blender_tests/bvh_tests_2.obj";
 //    std::string file = "blender_tests/textured_square.obj";
 //    std::string file = "blender_tests/multi_mesh.obj";
 //    std::string file = "blender_tests/suzanne_low_poly_500.obj";
 //    std::string file = "dragon/dragon_low_poly_1k.obj";
+//    std::string file = "dragon/dragon.obj";
 //    std::string file = "blender_tests/bvh_sponza.obj";
 //    std::string file = "blender_tests/crytek_sponza_cl.obj";
 //    std::string file = "crytek_sponza/crytek_vase_fixed.obj";
@@ -131,7 +131,8 @@ void Scene::Load_TriMesh() {
 //    std::string file = "san-miguel 2016 version/sanMiguel/sanMiguel.obj";
 //    std::string file = "san_miguel/san-miguel.obj";
 //    std::string file = "Shanghai_city/shanghai_city_scene.obj";
-    std::string file = "tibet_house/house.obj";
+//    std::string file = "tibet_house/house.obj";
+//    std::string file = "ue4 stuff/grux.obj";
 //    std::string file = "Array_House_Example/Array House Example_obj.obj";
 
     std::vector<std::unique_ptr<Object3D>> triangles = Object3D::CreateTriMesh(prefix + file);

@@ -1,17 +1,21 @@
 #ifndef PATHTRACER_GUI_H
 #define PATHTRACER_GUI_H
 
-#include <memory>
 #include "imgui/imgui.h"
+
+#include <memory>
+#include <vector>
 
 typedef struct SDL_Window SDL_Window;
 typedef struct BaseRenderer BaseRenderer;
 typedef struct Object3D Object3D;
+typedef struct Scene Scene;
 
 class Options;
 class ITexture;
 
 class GUI {
+    Scene* scene;
     Options* options;
     SDL_Window* window;
     BaseRenderer*& renderer;
@@ -19,6 +23,9 @@ class GUI {
     ImGuiWindowFlags window_flags;
     int selected_platform;
     int selected_device;
+    std::vector<std::string> env_map_array;
+    const char* env_map_dir = "../../envmaps/";
+    int env_map_index = 0;
 
     void showObjectSettings();
     void showOpenCLSettings();
@@ -26,11 +33,11 @@ class GUI {
 
 public:
 
-    bool has_changed = false;
+    bool options_has_changed;
     bool material_has_changed = false;
 
     GUI() = delete;
-    GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer_name);
+    GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer_name, Scene* scene);
 
     void Draw();
     void Update();
@@ -42,6 +49,7 @@ public:
     void showTextureSettings(std::shared_ptr<ITexture> texture, const char* texture_name);
 
     void showBrdfStackSettings();
+
 };
 
 

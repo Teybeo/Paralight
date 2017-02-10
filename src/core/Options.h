@@ -27,11 +27,11 @@ public:
     void Update();
 
     bool HasChanged() const {
-        return options_changed;
+        return has_changed;
     }
 
 //    void SetBackground(Vec3 color);
-    bool options_changed = false;
+    bool has_changed = false;
 };
 
 

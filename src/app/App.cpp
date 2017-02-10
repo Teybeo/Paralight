@@ -10,12 +10,13 @@
 #include <iostream>
 #include <chrono>
 
-//TODO: Add an short2* storing each image dimensions in the image2d_array_t to correctly map the uvs
 /// Bilinear texture sampling
 
+//TODO: [Opti] Replace Lambertian+Cook Torance with Ashikhmin to reduce register usage (around 70-80) which atm limits Kernel occupancy
+//TODO: [Opti] Precompute every object bbox for faster bvh build
+//TODO: [Feature] Set Orbit mode center to center of scene bbox
 //TODO: Environment map importance sampling
 //TODO: [Optim] Split the megakernel
-//TODO: [Feature] Dropdown list for env-map texture selection
 //TODO: [Feature] Rotation slider to rotate the env-map
 //TODO: [Fix] The u coordinate when sampling the env-map must be inverted because we are sampling _inside_ of the sphere
 
@@ -37,18 +38,17 @@ App::App(std::string title) {
 
     std::srand((unsigned int) std::time(0));
 //    std::srand((unsigned int) 3);
-//    window = Window {title, 500, 500};
+
     render_window = Window {title, 512, 512};
     gui_window = Window {title, 512, 512, 900};
 
     camera_controls.SetPosition(scene.cam_pos);
     camera_controls.SetRotation(scene.yz_angle, scene.xz_angle);
 
+    renderer = new CppRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
+//    renderer = new OpenCLRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
 
-//    renderer = new CppRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
-    renderer = new OpenCLRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
-
-    overlay = new GUI {&options, gui_window.getSDL_window(), renderer};
+    overlay = new GUI {&options, gui_window.getSDL_window(), renderer, &scene};
 
     is_running = true;
 }

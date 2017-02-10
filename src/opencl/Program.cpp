@@ -9,18 +9,21 @@
 #include <iostream>
 #include <fstream>
 #include <SDL_timer.h>
+#include <memory>
 
 using std::string;
 using std::vector;
+using std::set;
+using std::shared_ptr;
 
 // Path to the be searched for #include header
 const string SOURCE_DIR = "../../kernel";
-const string INCLUDE_ARG = "-I " + SOURCE_DIR + " ";
+const string INCLUDE_ARG = " -I " + SOURCE_DIR + " ";
 
 // Retrieves the last-write time in millisecondes of a file since 00:00
 uint32_t GetLastWriteTime(const char* filename);
 
-Program::Program(vector<string> file_array, const vector<string>& _build_options)
+Program::Program(vector<string> file_array, const set<string>& _build_options)
         : build_options{_build_options}
 {
     build_options.insert(build_options.begin(), INCLUDE_ARG);
@@ -31,10 +34,7 @@ Program::Program(vector<string> file_array, const vector<string>& _build_options
 
     for (string file : file_array) {
         file = SOURCE_DIR + '/' + file;
-        sources.push_back(make_pair(file, GetLastWriteTime(file.c_str())));
-
-        string* source = new string (ProgramBuilder::LoadSource(file));
-        cl_sources.push_back(std::make_pair(source->c_str(), source->size()));
+        files_timestamps.push_back(make_pair(file, GetLastWriteTime(file.c_str())));
     }
 }
 
@@ -44,6 +44,14 @@ void Program::Build(cl::Context context, cl::Device device) {
 
     ProgramBuilder builder {serialized_build_options.c_str(), context, device};
 
+    sources.clear();
+    cl::Program::Sources cl_sources;
+
+    for (const auto& file : files_timestamps) {
+        sources.push_back(ProgramBuilder::LoadSource(file.first));
+        cl_sources.push_back(std::make_pair(sources.back().c_str(), sources.back().size()));
+    }
+
     prog = cl::Program {context, cl_sources};
 
     prog.build(serialized_build_options.c_str());
@@ -52,16 +60,15 @@ void Program::Build(cl::Context context, cl::Device device) {
 
     /*vector<cl::Program> progs;
 
-    for (auto source : sources) {
-        cl::Program prog = builder.LoadAndCompile(source.first);
+    for (auto file : files_timestamps) {
+        cl::Program prog = builder.LoadAndCompile(file.first);
         progs.emplace_back(prog);
     }
 
     prog = builder.LinkPrograms(progs);*/
 }
 
-
-bool Program::Refresh(cl::Context context, cl::Device device, bool force_reload) {
+bool Program::HasChanged(bool force_reload) {
 
     static uint32_t lastCheck = 0;
 
@@ -71,18 +78,13 @@ bool Program::Refresh(cl::Context context, cl::Device device, bool force_reload)
 
     lastCheck = SDL_GetTicks();
 
-    for (std::pair<string, unsigned int>& source : sources) {
+    for (std::pair<string, unsigned int>& file : files_timestamps) {
 
-        uint32_t new_timestamp = GetLastWriteTime(source.first.c_str());
-        if (new_timestamp != source.second || force_reload) {
-            try {
-//                printf("old time: %ud, new time: %ud\n", source.second, new_timestamp);
-                source.second = new_timestamp;
-                Build(context, device);
-            } catch (const std::bad_exception& e) {
-                std::cout << "Exeption came from kernel refresh" << std::endl;
-                return false;
-            }
+        uint32_t current_timestamp = GetLastWriteTime(file.first.c_str());
+
+        if (current_timestamp != file.second || force_reload) {
+//            printf("old time: %ud, new time: %ud\n", file.second, current_timestamp);
+            file.second = current_timestamp;
             return true;
         }
     }
@@ -90,21 +92,12 @@ bool Program::Refresh(cl::Context context, cl::Device device, bool force_reload)
     return false;
 }
 
-void Program::AddBuildOption(const char* option) {
+void Program::SetBuildOption(const char* build_option, bool enabled) {
 
-    auto it = std::find(build_options.begin(), build_options.end(), option);
-
-    if (it == build_options.end()) {
-        build_options.emplace_back(option);
-    }
-}
-
-void Program::RemoveBuildOption(const char* option) {
-
-    auto it = std::find(build_options.begin(), build_options.end(), option);
-
-    if (it != build_options.end()) {
-        build_options.erase(it);
+    if (enabled) {
+        build_options.emplace(build_option);
+    } else {
+        build_options.erase(build_option);
     }
 }
 
@@ -163,3 +156,4 @@ void Program::DumpBinaries(string filename) {
 
     out_binary_file.close();
 }
+

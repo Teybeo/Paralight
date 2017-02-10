@@ -41,14 +41,10 @@ Texture<T>::Texture(const std::string& path, bool store_in_linear) : path(path) 
 }
 
 template <typename T>
-Texture<T>::Texture(const Texture& other) {
-    cout << "Texture [" << path << "] copied" << endl;
-}
-
-template <typename T>
 Texture<T>::~Texture() {
     cout << "Texture [" << path << "] destroyed" << endl;
     delete[] data;
+    data = nullptr;
 }
 
 /**

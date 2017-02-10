@@ -6,10 +6,10 @@ using std::cout;
 
 void Options::Update() {
 
-    options_changed = false;
+    has_changed = false;
 
     if (relevant_key_event_captured)
-        options_changed = true;
+        has_changed = true;
 
     relevant_key_event_captured = false;
 }
