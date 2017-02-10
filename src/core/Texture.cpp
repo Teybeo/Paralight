@@ -119,6 +119,8 @@ void Texture<T>::Load_HDR() {
         data[4 * i + 2] = result.cols[3 * i + 2];
         data[4 * i + 3] = 0;
     }
+
+    free(result.cols);
 }
 
 template <typename T>
