@@ -35,12 +35,14 @@ public:
     BVH bvh;
     std::vector<std::unique_ptr<Object3D>> objects;
     std::set<Material*> material_set;
-    Texture<float>* env_map;
+    std::unique_ptr<TextureFloat> env_map;
 
     float yz_angle = 0;
     float xz_angle = 0;
     Vec3 cam_pos {0, 0, 0};
     float debug_scale = 1;
+    bool has_changed = false;
+    bool env_map_has_changed = false;
 
     BoundingBox ComputeBBox() const;
 
@@ -56,10 +58,6 @@ public:
 
     std::set<Material*> GetMaterialSet() const {
         return material_set;
-    }
-
-    int GetMaterialCount() {
-        return material_set.size();
     }
 };
 

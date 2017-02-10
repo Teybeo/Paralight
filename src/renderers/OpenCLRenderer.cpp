@@ -70,124 +70,27 @@ OpenCLRenderer::OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls
 
     cout << "Objects: " << object_count << endl;
 
-    adapter = SceneAdapter {scene};
+    texture           = cl::Buffer(context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, sizeof(Uint8) * 4 * 1920 * 1080);
+    accum_buffer      = cl::Buffer(context, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, sizeof(float) * 4 * 1920 * 1080);
+    options_buffer    = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, sizeof(CLOptions));
 
-    const vector<CLObject3D>& object_vector = adapter.GetObjectArray();
-    const vector<CLBrdf>& brdf_vector = adapter.GetBrdfArray();
+    CreateSceneBuffers(scene);
+    CreateEnvMapImage(scene->env_map);
 
-    cl_mem_flags COPY_TO_DEVICE_FLAGS = CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY | CL_MEM_COPY_HOST_PTR;
-
-    texture           = CreateBuffer( CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, sizeof(Uint8) * 4 * 1920 * 1080);
-    accum_buffer      = CreateBuffer( CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, sizeof(float) * 4 * 1920 * 1080);
-
-    object_buffer     = CreateBuffer(COPY_TO_DEVICE_FLAGS, sizeof(CLObject3D) * object_vector.size(), object_vector.data());
-
-    cout << object_vector.size() * sizeof(CLObject3D) / 1024 << " Ko written to CL Device for " << object_vector.size() << " objects " << endl;
-
-    bvh_node_buffer   = CreateBuffer(COPY_TO_DEVICE_FLAGS, sizeof(CLNode2) * adapter.GetBvhNodeArray().size(), adapter.GetBvhNodeArray().data());
-
-    if (scene->GetVertexCount() > 0) {
-        pos_buffer        = CreateBuffer (COPY_TO_DEVICE_FLAGS, sizeof(CLVec4) * scene->GetVertexCount(), adapter.GetPosArray().data());
-        normal_buffer     = CreateBuffer (COPY_TO_DEVICE_FLAGS, sizeof(CLVec4) * scene->GetVertexCount(), adapter.GetNormalArray().data());
-    }
-
-    if (adapter.GetUvArray().size() > 0) {
-        uv_buffer         = CreateBuffer (COPY_TO_DEVICE_FLAGS, sizeof(CLVec2) * adapter.GetUvArray().size(), adapter.GetUvArray().data());
-    }
-
-    brdfs_buffer      = CreateBuffer( COPY_TO_DEVICE_FLAGS, sizeof(CLBrdf) * brdf_vector.size(), brdf_vector.data());
-    cout << brdf_vector.size() * sizeof(CLBrdf) / 1024 << " Ko written to CL Device for " << brdf_vector.size() << " materials" << endl;
-
-    options_buffer    = CreateBuffer( CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, sizeof(CLOptions));
-
-    const vector<TextureUbyte*>& texture_array = adapter.GetTextureArray();
-
-    if (texture_array.size() > 0) {
-
-        const vector<CLTextureInfo>& info_array = adapter.GetTextureInfoArray();
-        image_buffer      = CreateBuffer(CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, (size_t) adapter.GetTextureArraySize());
-        for (size_t i = 0; i < texture_array.size(); ++i) {
-            queue.enqueueWriteBuffer(image_buffer, CL_TRUE, (size_t) info_array[i].byte_offset, texture_array[i]->GetSize(), texture_array[i]->data);
-        }
-        image_info_buffer = CreateBuffer( COPY_TO_DEVICE_FLAGS, sizeof(CLTextureInfo) * info_array.size(), info_array.data());
-        cout << info_array.size() * sizeof(CLTextureInfo) / 1024 << " Ko written to CL Device for " << info_array.size() << " tex infos" << endl;
-    }
-
-    env_map_image   = cl::Image2D{context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, cl::ImageFormat{CL_RGBA, CL_FLOAT}, scene->env_map->width, scene->env_map->height, 0, scene->env_map->data};
-    cout <<  scene->env_map->GetSize() / 1024 << " Ko written to CL Device for the environnment map" << endl;
-
-    image_index_cache = std::map<string, char>();
+    std::map<string, char>();
 
     clOptions.fov = tanf((float) ((fov / 2.f) * (M_PI / 180)));
 
     DUMP_SIZE(CLNode2)
 
-    render_kernel = CreateRenderKernel();
+    CreateRenderKernel(program.prog);
 
-    string name = "non_native";
-
+//    string name = "base";
 //    program.DumpBinaries(name);
 //    system(("ptx_to_cubin.bat " + name).c_str());
 //    exit(0);
 
     cout << "OpenCL Renderer ready" << endl;
-}
-
-cl::Kernel OpenCLRenderer::CreateRenderKernel() const {
-
-    cl::Kernel kernel {program.prog, "render"};
-
-    kernel.setArg(0, texture);
-    kernel.setArg(1, accum_buffer);
-    kernel.setArg(2, bvh_node_buffer);
-    kernel.setArg(3, object_buffer);
-    kernel.setArg(4, pos_buffer);
-    kernel.setArg(5, normal_buffer);
-    kernel.setArg(6, uv_buffer);
-    kernel.setArg(7, brdfs_buffer);
-    kernel.setArg(8, options_buffer);
-    kernel.setArg(9, env_map_image);
-    kernel.setArg(10, image_buffer);
-    kernel.setArg(11, image_info_buffer);
-
-    return kernel;
-}
-
-Program CreateProgram(cl::Context& context, cl::CommandQueue& queue, cl::Device& device, const Options* options) {
-
-    vector<string> build_options = {
-            " -cl-std=CL1.2",
-            " -cl-fast-relaxed-math",
-//            " -cl-unsafe-math-optimizations",
-//            " -cl-single-precision-constant",
-//            " -cl-no-signed-zeros -cl-mad-enable -Werror",
-//            " -save-temps=binary", // AMD specific
-    };
-
-    if (options->use_bvh)
-        build_options.push_back(" -D USE_BVH");
-//    build_options.push_back(" -cl-opt-disable");
-//    build_options.push_back(" -cl-nv-opt-level=0");
-//    build_options.push_back(" -cl-nv-maxrregcount=30");
-
-    vector<string> source_array = {
-            "tonemap.cl",
-            "texture.cl",
-            "brdf.cl",
-            "objects.cl",
-            "bvh.cl",
-            "material.cl",
-            "render.cl",
-    };
-
-    Uint32 start = SDL_GetTicks();
-
-    Program program {source_array, build_options};
-    program.Build(context, device);
-
-    cout << "Program compiled in " << (SDL_GetTicks() - start) / 1000.f << "s" << endl;
-
-    return program;
 }
 
 OpenCLRenderer::~OpenCLRenderer() {
@@ -240,42 +143,185 @@ void OpenCLRenderer::Update() {
 
     if (update_option) {
 
-        if (options->use_bvh)
-            program.AddBuildOption(" -D USE_BVH");
-        else
-            program.RemoveBuildOption(" -D USE_BVH");
-
-        if (use_fast_math)
-            program.AddBuildOption(" -cl-fast-relaxed-math");
-        else
-            program.RemoveBuildOption(" -cl-fast-relaxed-math");
+        program.SetBuildOption(" -D USE_BVH", options->use_bvh);
+        program.SetBuildOption(" -cl-fast-relaxed-math", use_fast_math);
 
         reload_kernel = true;
         update_option = false;
     }
 
-    if (program.Refresh(context, device, reload_kernel)) {
+//    if (program.Refresh(context, device, reload_kernel)) {
+    if (program.HasChanged(reload_kernel)) {
+        UpdateRenderKernel();
         CLEAR_ACCUM_BIT = 0;
         frame_number = 0;
-        render_kernel = CreateRenderKernel();
         reload_kernel = false;
     }
 
-    //TODO: Only update these data when they have changed ?
-    auto start = std::chrono::high_resolution_clock::now();
-    UpdateCLScene();
-    auto end = std::chrono::high_resolution_clock::now();
+    if (scene->has_changed) {
+        UpdateSceneBuffers();
+    }
 
-    if ((start - end).count() > 1.f)
-        cout << "UpdateCLScene: " << std::chrono::duration<float>(end - start).count() * 1000.f << "ms" << endl;
-
-    UpdateCLOptions();
+    if (scene->env_map_has_changed) {
+        UpdateEnvMap();
+        CLEAR_ACCUM_BIT = 0;
+        frame_number = 0;
+    }
+    // Always updated because the frame number increments every frame
+    UpdateOptionsBuffer();
 }
 
-void OpenCLRenderer::UpdateCLScene() {
+Program CreateProgram(cl::Context& context, cl::CommandQueue& queue, cl::Device& device, const Options* options) {
+
+    set<string> build_options = {
+            " -cl-std=CL1.2",
+            " -cl-fast-relaxed-math",
+//            " -cl-unsafe-math-optimizations",
+//            " -cl-single-precision-constant",
+//            " -cl-no-signed-zeros -cl-mad-enable -Werror",
+//            " -save-temps=binary", // AMD specific
+    };
+
+    if (options->use_bvh)
+        build_options.insert(" -D USE_BVH");
+//    build_options.insert(" -cl-opt-disable");
+//    build_options.insert(" -src-in-ptx");
+//    build_options.insert(" -cl-nv-opt-level=0");
+//    build_options.insert(" -cl-nv-maxrregcount=30");
+
+    vector<string> source_array = {
+            "tonemap.cl",
+            "texture.cl",
+            "brdf.cl",
+            "objects.cl",
+            "bvh.cl",
+            "material.cl",
+            "render.cl",
+    };
+
+    Uint32 start = SDL_GetTicks();
+
+    Program program {source_array, build_options};
+
+    program.Build(context, device);
+
+    cout << "Program compiled in " << (SDL_GetTicks() - start) / 1000.f << "s" << endl;
+
+    return program;
+}
+
+void OpenCLRenderer::CreateRenderKernel(cl::Program& prog) {
+
+    render_kernel = cl::Kernel {prog, "render"};
+
+    SetKernelArguments(render_kernel);
+}
+
+void OpenCLRenderer::UpdateRenderKernel() {
+
+    program.Build(context, device);
+
+    CreateRenderKernel(program.prog);
+}
+
+void OpenCLRenderer::SetKernelArguments(cl::Kernel& kernel) const {
+    kernel.setArg(0, texture);
+    kernel.setArg(1, accum_buffer);
+    kernel.setArg(2, bvh_node_buffer);
+    kernel.setArg(3, object_buffer);
+    kernel.setArg(4, pos_buffer);
+    kernel.setArg(5, normal_buffer);
+    kernel.setArg(6, uv_buffer);
+    kernel.setArg(7, brdfs_buffer);
+    kernel.setArg(8, options_buffer);
+    kernel.setArg(9, env_map_image);
+    kernel.setArg(10, image_buffer);
+    kernel.setArg(11, image_info_buffer);
+}
+
+void OpenCLRenderer::CreateEnvMapImage(unique_ptr<TextureFloat>& env_map) {
+    env_map_image = cl::Image2D{context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, cl::ImageFormat{CL_RGBA, CL_FLOAT}, env_map->width, env_map->height, 0, env_map->data};
+    cout <<  env_map->GetSize() / 1024 << " Ko written to CL device for the environnment map" << endl;
+}
+
+void OpenCLRenderer::UpdateEnvMap() {
+
+    CreateEnvMapImage(scene->env_map);
+
+    render_kernel.setArg(9, env_map_image);
+}
+
+void OpenCLRenderer::CreateSceneBuffers(const Scene* scene) {
+
+    SceneAdapter adapter = SceneAdapter {scene};
+
+    cl_mem_flags COPY_TO_DEVICE_FLAGS = CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY | CL_MEM_COPY_HOST_PTR;
+
+    object_buffer = CreateBuffer(adapter.GetObjectArray(), COPY_TO_DEVICE_FLAGS);
+    bvh_node_buffer = CreateBuffer(adapter.GetBvhNodeArray(), COPY_TO_DEVICE_FLAGS);
+
+    if (scene->GetVertexCount() > 0) {
+        pos_buffer = CreateBuffer(adapter.GetPosArray(), COPY_TO_DEVICE_FLAGS);
+        normal_buffer = CreateBuffer(adapter.GetNormalArray(), COPY_TO_DEVICE_FLAGS);
+    }
+
+    if (adapter.GetUvArray().size() > 0) {
+        uv_buffer = CreateBuffer(adapter.GetUvArray(), COPY_TO_DEVICE_FLAGS);
+    }
+
+    brdfs_buffer = CreateBuffer(adapter.GetBrdfArray(), COPY_TO_DEVICE_FLAGS);
+
+    const vector<TextureUbyte*>& texture_array = adapter.GetTextureArray();
+
+    if (texture_array.size() > 0) {
+
+        const vector<CLTextureInfo>& info_array = adapter.GetTextureInfoArray();
+        image_buffer      = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, (size_t) adapter.GetTextureArraySize());
+        for (size_t i = 0; i < texture_array.size(); ++i) {
+            queue.enqueueWriteBuffer(image_buffer, CL_TRUE, (size_t) info_array[i].byte_offset, texture_array[i]->GetSize(), texture_array[i]->data);
+            cout <<  texture_array[i]->GetSize() / 1024 << " Ko written to CL device for the texture " << i << endl;
+        }
+        image_info_buffer = CreateBuffer(info_array, COPY_TO_DEVICE_FLAGS);
+    }
+}
+
+void OpenCLRenderer::UpdateSceneBuffers() {
+
+    static uint32_t last_check = 0;
+
+    // Limit buffer update frequency to 60 hps
+    if (SDL_GetTicks() < last_check + 16)
+        return;
+
+    last_check = SDL_GetTicks();
+
+    SceneAdapter adapter {scene};
+
+    CreateSceneBuffers(scene);
+
+    SetKernelArguments(render_kernel);
 
     clOptions.sphere_count = 0;
     clOptions.plane_count = 0;
+}
+
+// Update the clOptions struct to be sent to the opencl device
+void OpenCLRenderer::UpdateOptionsBuffer() {
+
+    clOptions.use_emissive_lighting    = options->use_emissive_lighting;
+    clOptions.use_distant_env_lighting = options->use_distant_env_lighting;
+    clOptions.brdf_bitfield            = options->brdf_bitfield;
+    clOptions.use_tonemapping          = options->use_tonemapping;
+    clOptions.triangle_count           = std::min(100, scene->GetTriangleCount());
+    clOptions.sample_count             = options->sample_count;
+    clOptions.bounce_count             = options->bounce_cout;
+    clOptions.debug                    = debug;
+    clOptions.accum_clear_bit          = CLEAR_ACCUM_BIT;
+    clOptions.frame_number             = frame_number;
+    clOptions.origin                   = camera_controls->GetPosition();
+    clOptions.rotation                 = camera_controls->GetRotation();
+
+    queue.enqueueWriteBuffer(options_buffer, CL_TRUE, 0, sizeof(CLOptions), &clOptions);
 }
 
 void OpenCLRenderer::KeyEvent(SDL_Keysym keysym, SDL_EventType type) {
@@ -301,42 +347,29 @@ void OpenCLRenderer::KeyEvent(SDL_Keysym keysym, SDL_EventType type) {
         }
     }
 }
-// Update the clOptions struct to be sent to the opencl device
-void OpenCLRenderer::UpdateCLOptions() {
 
-    clOptions.use_emissive_lighting    = options->use_emissive_lighting;
-    clOptions.use_distant_env_lighting = options->use_distant_env_lighting;
-    clOptions.brdf_bitfield            = options->brdf_bitfield;
-    clOptions.use_tonemapping          = options->use_tonemapping;
-    clOptions.triangle_count           = std::min(100, scene->GetTriangleCount());
-    clOptions.sample_count             = options->sample_count;
-    clOptions.bounce_count             = options->bounce_cout;
-    clOptions.debug                    = debug;
-    clOptions.accum_clear_bit          = CLEAR_ACCUM_BIT;
-    clOptions.frame_number             = frame_number;
-    clOptions.origin                   = camera_controls->GetPosition();
-    clOptions.rotation                 = camera_controls->GetRotation();
-
-    queue.enqueueWriteBuffer(options_buffer, CL_TRUE, 0, sizeof(CLOptions), &clOptions);
+// Return clean names from typeid, hacky because only compiler dependent
+template <typename T>
+string GetTypename() {
+    const string& temp = typeid(T).name();
+    return temp.substr(temp.find_first_not_of("0123456789"));
 }
 
-cl::Buffer OpenCLRenderer::CreateBuffer(cl_mem_flags flags, size_t size, const void* data) {
+template <typename T>
+cl::Buffer OpenCLRenderer::CreateBuffer(vector<T> vec, cl_mem_flags flags) {
 
-    auto max_size = device.getInfo<CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE>();
+    auto max_size = device.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
 
-    if (flags == (CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY) && (size >= max_size)) {
-        auto device_type = device.getInfo<CL_DEVICE_TYPE>();
-        auto vendor = device.getInfo<CL_DEVICE_VENDOR>();
-        // Intel Gpu
-        if (vendor.find("Intel") != string::npos && device_type == CL_DEVICE_TYPE_GPU)
-            cerr << "WARNING: Requested " << size / 1024 << " Ko of constant buffer, max is: " << max_size / 1024 << " Ko" << endl;
-        else
-            cout << "WARNING: Requested " << size / 1024 << " Ko of constant buffer, max is: " << max_size / 1024 << " Ko" << endl;
+    size_t size_bytes = vec.size() * sizeof(T);
+
+    if (vec.size() >= max_size) {
+        cerr << "Buffer size exceeds max mem allocation size for this device: " << vec.size() << " >= " << max_size << endl;
     }
 
-    return cl::Buffer{context, flags, size, (void*)data};
-}
+    cout << size_bytes / 1024 << " Ko written to CL device for " << vec.size() << " " << GetTypename<T>() << endl;
 
+    return cl::Buffer (context, flags, size_bytes, vec.data());
+}
 
 void CL_CALLBACK OpenCLRenderer::debugCallback(const char* errinfo, const void* private_info, size_t cb, void* user_data) {
     cout << "Debug Callback: " << errinfo << '\n';
@@ -410,4 +443,5 @@ const char* OpenCLRenderer::GetCLErrorString(int code) {
             return ("Unknown CL error code: " + std::to_string(code)).c_str();
     }
 }
+
 

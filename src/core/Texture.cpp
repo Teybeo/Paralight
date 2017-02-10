@@ -41,14 +41,10 @@ Texture<T>::Texture(const std::string& path, bool store_in_linear) : path(path) 
 }
 
 template <typename T>
-Texture<T>::Texture(const Texture& other) {
-    cout << "Texture [" << path << "] copied" << endl;
-}
-
-template <typename T>
 Texture<T>::~Texture() {
     cout << "Texture [" << path << "] destroyed" << endl;
     delete[] data;
+    data = nullptr;
 }
 
 /**
@@ -119,6 +115,8 @@ void Texture<T>::Load_HDR() {
         data[4 * i + 2] = result.cols[3 * i + 2];
         data[4 * i + 3] = 0;
     }
+
+    free(result.cols);
 }
 
 template <typename T>

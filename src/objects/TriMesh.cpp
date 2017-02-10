@@ -134,6 +134,7 @@ void TriMesh::ImportAssimpMesh(const aiScene* ai_scene, std::string directory) {
 
     materials = vector<unique_ptr<Material>>(ai_scene->mNumMaterials);
 
+//    #pragma omp parallel for ordered
     for (size_t i = 0; i < materials.size(); ++i) {
         materials[i] = unique_ptr<Material>(new Standard(ai_scene->mMaterials[i], directory));
     }

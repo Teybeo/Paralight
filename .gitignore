@@ -6,30 +6,20 @@ cmake_install.cmake
 install_manifest.txt
 
 *.db
+*.ir
+*.bat
 
 \.idea/
-
 misc/
-
 imagesold/
-
 images/
-
 dumps/
-
 cmake*/
-
 blend/
-
 build/
-
 models
-
 envmaps
 
 backup*.zip
 kernel/intel_bug/
-
 kernel/code_builder_temp/
-
-*.ir

@@ -103,9 +103,9 @@ Vec3 CppRenderer::Raytrace(Ray ray, bool debug_pixel) {
         Object3D* hit_object = nullptr;
 
 //        FindNearestObject(ray, dist, hit_object, false);
-        scene->bvh.FindNearestIntersection(ray, dist, hit_object);
+//        scene->bvh.FindNearestIntersection(ray, dist, hit_object);
 //        if (options->debug)
-//            scene->bvh2->FindNearestIntersectionOpti(ray, dist, hit_object);
+            scene->bvh2->FindNearestIntersectionOpti(ray, dist, hit_object);
 //        else
 //            scene->bvh2->FindNearestIntersection(ray, dist, hit_object);
 
@@ -322,7 +322,8 @@ void CppRenderer::TracePixel(int x, int y, bool picking) {
         int submesh_index = -1;
         cout << "Ray origin: " << ray.origin << " direction: " << ray.direction << endl;
 //        if (FindNearestObject(ray, dist, hit_object, triangle_index, submesh_index) == true) {
-        if (scene->bvh.FindNearestIntersection(ray, dist, hit_object) == true && hit_object) {
+//        if (scene->bvh.FindNearestIntersection(ray, dist, hit_object) == true && hit_object) {
+        if (scene->bvh2->FindNearestIntersectionOpti(ray, dist, hit_object) == true && hit_object) {
             selected_object = hit_object;
             cout << "Hit object: " << typeid(*hit_object).name() << endl;
             cout << "Hitpos: " << (ray.origin + ray.direction * dist) << " triangle/sub index: " << triangle_index << " / " << submesh_index << endl;

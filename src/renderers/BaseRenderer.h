@@ -24,7 +24,7 @@ protected:
     SDL_Window* window;
     CameraControls* camera_controls;
     Options* options;
-    bool CLEAR_ACCUM_BIT = 1;
+    bool CLEAR_ACCUM_BIT = 0;
     short frame_number = 0;
     float last_clear_timestamp = 0;
     Object3D* selected_object = nullptr;
@@ -48,22 +48,11 @@ public:
 
     void DrawFrametime();
 
-    void setFrame_number(short frame_number) {
-        BaseRenderer::frame_number = frame_number;
-    }
-
-    int getFrame_number() const {
-        return frame_number;
-    }
-
     Object3D* GetSelectedObject() {
         return selected_object;
     }
 
-    const Scene* GetScene() const;
-
     void DumpScreenshot();
-
 };
 
 

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <iostream>
+#include <map>
 #include <math/Vec3.h>
 #include <material/BrdfStack.h>
 #include <assimp/material.h>
@@ -69,7 +70,6 @@ public:
             : Material{new StandardStack(0, 0, 0)}
     {
         aiString name;
-        aiColor3D ai_color;
         ai_material->Get(AI_MATKEY_NAME, name);
         cout << "Material: [" << name.C_Str() << "]" << endl;
 
@@ -90,34 +90,33 @@ public:
             }
         };
 
+        auto ImportValue = [&] (std::shared_ptr<ITexture>& texture_map, const char* matkey, Vec3 default_value, bool store_in_linear = true) {
+
+            aiColor3D ai_color;
+
+            std::map<const char *, const char *> stupid_map {{"diffuse", "$clr.diffuse"}, {"specular", "$clr.specular"}};
+
+            if (texture_map == nullptr) {
+                if (ai_material->Get(stupid_map[matkey], 0, 0, ai_color) != AI_SUCCESS) {
+                    std::cout << "No textures and no colors found for " << matkey << std::endl;
+                }
+
+                Vec3 color = Vec3{ai_color.r, ai_color.g, ai_color.b};
+                if (color == 0 && default_value != 0)
+                    color = default_value;
+
+                texture_map = std::make_shared<ValueTex3f>(color);
+                std::cout << color << " for " << matkey << endl;
+            }
+        };
+
         ImportTexture(albedo_map, aiTextureType_DIFFUSE);
         ImportTexture(reflectance_map, aiTextureType_SPECULAR);
 //        ImportTexture(roughness_map, aiTextureType_SPECULAR);
         ImportTexture(normal_map, aiTextureType_HEIGHT, false);
 
-        if (albedo_map == nullptr) {
-
-            if (ai_material->Get(AI_MATKEY_COLOR_DIFFUSE, ai_color) != AI_SUCCESS) {
-                std::cout << "No textures and no colors found for albedo" << std::endl;
-            }
-
-            Vec3 color = Vec3{ai_color.r, ai_color.g, ai_color.b};
-            albedo_map = std::make_shared<ValueTex3f>(color);
-            std::cout << color << " for albedo" << endl;
-        }
-
-        if (reflectance_map == nullptr) {
-
-            if (ai_material->Get(AI_MATKEY_COLOR_SPECULAR, ai_color) != AI_SUCCESS) {
-                std::cout << "No textures and no colors found for specular" << std::endl;
-            }
-
-            Vec3 color = Vec3{ai_color.r, ai_color.g, ai_color.b};
-            if (color == 0)
-                color = 0.04f;
-            reflectance_map = std::make_shared<ValueTex3f>(color);
-            std::cout << color << " for reflectance" << endl;
-        }
+        ImportValue(albedo_map, "diffuse", 0);
+        ImportValue(reflectance_map, "specular", 0.04f);
 
         roughness_map = std::make_shared<ValueTex1f>(0.3f);
     }

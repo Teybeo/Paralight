@@ -2,26 +2,26 @@
 #define OPENCL_KERNEL_H
 
 #include "CL/cl.hpp"
+#include <set>
 
 class Program {
 
-    std::vector<std::pair<std::string, unsigned int>> sources;
-    std::vector<std::string> build_options;
-    cl::Program::Sources cl_sources;
+    std::set<std::string> build_options;
+    std::vector<std::string> sources;
+    std::vector<std::pair<std::string, unsigned int>> files_timestamps;
+
 public:
 
     cl::Program prog;
 
     Program() = default;
-    Program(std::vector<std::string> source_array, const std::vector<std::string>& build_options);
+    Program(std::vector<std::string> source_array, const std::set<std::string>& build_options);
 
     void Build(cl::Context context, cl::Device device);
 
-    bool Refresh(cl::Context context, cl::Device device, bool force_reload = false);
+    bool HasChanged(bool force_reload);
 
-    void AddBuildOption(const char* option);
-
-    void RemoveBuildOption(const char* option);
+    void SetBuildOption(const char* build_option, bool enabled);
 
     void DumpBinaries(std::string filename);
 };

@@ -38,7 +38,7 @@ void BaseRenderer::Update() {
     // The CLEAR_ACCUM_BIT will be mult/AND with the accumulation buffer and frame number
     // Setting it to 0 will clear them and setting to 1 will do nothing
     // Check if the current rendering config has changed
-    CLEAR_ACCUM_BIT = !(options->HasChanged() || camera_controls->HasChanged());
+    CLEAR_ACCUM_BIT = !(options->HasChanged() || camera_controls->HasChanged() || scene->has_changed || scene->env_map_has_changed);
 
     frame_number *= CLEAR_ACCUM_BIT;
     frame_number++;
@@ -93,10 +93,6 @@ void BaseRenderer::DumpScreenshot() {
     SDL_Surface* surface = SDL_GetWindowSurface(window);
     std::string name = typeid(*this).name();
     SDL_SaveBMP(surface, (std::string("../../dumps/") + name + ".bmp").c_str());
-}
-
-const Scene* BaseRenderer::GetScene() const {
-    return scene;
 }
 
 void BaseRenderer::KeyEvent(SDL_Keysym keysym, SDL_EventType type) {
