@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.3)
 project(Paralight)
 
-set(COMMON_FLAGS -std=c++11 -Wall -fopenmp)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(COMMON_FLAGS -Wall -fopenmp)
 
 set(BUILD_64_BIT "ON")
 set(DEFINITIONS USE_OPENMP)
