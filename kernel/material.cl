@@ -2,14 +2,13 @@
 
 void EvaluateMaterial(float3* ray_direction, float3* material, int index, float3 normal, float3 shading_normal, float2 uv, global Brdf* brdfs, char brdf_bitfield, global char* texture_array, global TextureInfo* info_array, RNG_SEED_ARGS) {
 
-//    float3 ratio = 1;
     float brdf_weight;
     float3 outgoing_dir = -*ray_direction;
     float pdf = 1;
 
     char sampled_brdf_type = SampleBrdfType(&brdf_weight, brdfs[index].type, brdf_bitfield, RNG_SEED);
 
-    *material = brdf_weight;
+    *material *= brdf_weight;
 
     if (sampled_brdf_type == LAMBERTIAN) {
 
@@ -33,7 +32,7 @@ void EvaluateMaterial(float3* ray_direction, float3* material, int index, float3
             float3 half_vector = normalize(specular_ray + outgoing_dir);
             f *= 1.f - Fresnel(reflection, specular_ray, half_vector);
         }
-        *material = (f * cos_factor) / pdf;
+        *material *= (f * cos_factor) / pdf;
 
     } else if (sampled_brdf_type == MICROFACET) {
 
@@ -46,7 +45,7 @@ void EvaluateMaterial(float3* ray_direction, float3* material, int index, float3
         float cos_factor = max(dot(shading_normal, *ray_direction), 0.f) * (dot(normal, *ray_direction) > 0);
 //        float cos_factor = max(dot(shading_normal, *ray_direction), 0.f);
 
-        *material = (f * cos_factor) / pdf;
+        *material *= (f * cos_factor) / pdf;
     }
     else if (sampled_brdf_type == MIRROR) {
 

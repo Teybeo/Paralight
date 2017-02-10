@@ -56,7 +56,7 @@ float3 Sample_Microfacet_f(float roughness, float3 reflection, float3 outgoing_d
 //    float geom = GeometrySmithOrGGX(normal, outgoing_dir, *incoming_dir);
     float denominator = 4.f * dot(normal, outgoing_dir) * dot(normal, *incoming_dir);
 
-    *pdf = (ndf * dot(normal, half_vector)) / (4 * dot(half_vector, outgoing_dir));
+    *pdf = (ndf * dot(normal, half_vector)) / (4.f * dot(half_vector, outgoing_dir));
     *pdf = *pdf ? *pdf : 1; // Avoid divid by 0
 //    pdf = 1 / (2 * M_PI_F);
 

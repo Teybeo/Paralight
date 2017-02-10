@@ -150,14 +150,14 @@ void GetSurfaceData(float3* normal_out, float2* uv_out, float3 hit_pos, const Ra
         *uv_out = SphericalToCartesian(*normal_out);
         *normal_out = normalize(hit_pos - objects[index].pos);
         break;
-    case 3:
-        GetTriangleData(objects[index], hit_pos, normal_out, uv_out, VERTEX_DATA);
-        break;
     case 2:
         *uv_out = 0;
         *normal_out = objects[index].normal;
         // Double-side normal for planes
         *normal_out *= sign(dot(-(*normal_out), ray.direction));
+        break;
+    case 3:
+        GetTriangleData(objects[index], hit_pos, normal_out, uv_out, VERTEX_DATA);
         break;
     default:
         *uv_out = 0;
