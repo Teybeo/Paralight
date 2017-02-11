@@ -14,6 +14,7 @@ typedef struct BVH2 BVH2;
 
 class SceneAdapter {
 
+
     std::vector<CLObject3D> object_array;
     std::vector<CLVec4> pos_array;
     std::vector<CLVec4> normal_array;
@@ -28,6 +29,11 @@ public:
 
     SceneAdapter() = default;
     SceneAdapter(const Scene* scene);
+    SceneAdapter(const std::set<Material*>& material_set);
+    SceneAdapter(std::vector<std::unique_ptr<Object3D>>& objects, const std::set<Material*>& material_set);
+
+    static std::map<TextureUbyte*, char> CreateBrdfArray(std::vector<CLBrdf>& brdf_array, const std::set<Material*>& material_set);
+    static std::map<Object3D*, int> CreateCLObjectArray(std::vector<CLObject3D>& object_array, const std::vector<std::unique_ptr<Object3D>>& objects, const std::set<Material*>& material_set);
 
     const std::vector<CLObject3D>& GetObjectArray() const {
         return object_array;
@@ -67,15 +73,13 @@ public:
 
 private:
 
-    std::map<Object3D*, int> CreateCLObjectArray(const std::vector<std::unique_ptr<Object3D>>& objects, const std::set<Material*>& material_set);
-
-    void CreateMaterialArrays(const std::set<Material*>& material_set);
-
     void CreateTriangleDataArrays(const std::set<const TriMesh*> trimeshes);
 
     void CreateBvhNodeArray(BVH2* bvh_root, std::map<Object3D*, int>& obj_map);
 
     void CreateTextureInfoArray(std::map<TextureUbyte*, char>& texture_index_map);
+
+    void CreateTextureArray(std::map<TextureUbyte*, char> map);
 };
 
 #endif //PATHTRACER_SCENECONVERTER_H

@@ -24,16 +24,26 @@ CLObject3D GetCLObject3D(const Object3D& object);
 
 SceneAdapter::SceneAdapter(const Scene* scene) {
 
-    map<Object3D*, int> obj_map = CreateCLObjectArray(scene->objects, scene->GetMaterialSet());
-
+    map<Object3D*, int> obj_map = CreateCLObjectArray(object_array, scene->objects, scene->GetMaterialSet());
     CreateTriangleDataArrays(scene->GetTriMeshes());
-
     CreateBvhNodeArray(scene->bvh2, obj_map);
-    
-    CreateMaterialArrays(scene->GetMaterialSet());
+
+    map<TextureUbyte*, char> texture_index_map = CreateBrdfArray(brdf_array, scene->GetMaterialSet());
+    CreateTextureArray(texture_index_map);
+    CreateTextureInfoArray(texture_index_map);
 }
 
-map<Object3D*, int> SceneAdapter::CreateCLObjectArray(const vector<unique_ptr<Object3D>>& objects, const set<Material*>& material_set) {
+SceneAdapter::SceneAdapter(const std::set<Material*>& material_set) {
+
+    CreateBrdfArray(brdf_array, material_set);
+}
+
+SceneAdapter::SceneAdapter(vector<unique_ptr<Object3D>>& objects, const set<Material*>& material_set) {
+
+    CreateCLObjectArray(object_array, objects, material_set);
+}
+
+map<Object3D*, int> SceneAdapter::CreateCLObjectArray(vector<CLObject3D>& object_array, const vector<unique_ptr<Object3D>>& objects, const set<Material*>& material_set) {
 
     map<Object3D*, int> obj_map;
 
@@ -87,8 +97,9 @@ CLObject3D GetCLObject3D(const Object3D& object) {
     return cl_obj;
 }
 
-void SceneAdapter::CreateMaterialArrays(const set<Material*>& material_set) {
+map<TextureUbyte*, char> SceneAdapter::CreateBrdfArray(vector<CLBrdf>& brdf_array, const set<Material*>& material_set) {
 
+    // This map isn't used because we don't support runtime texture changes (yet ?)
     map<TextureUbyte*, char> texture_index_map;
 
     for (const auto& material : material_set) {
@@ -98,13 +109,7 @@ void SceneAdapter::CreateMaterialArrays(const set<Material*>& material_set) {
         brdf_array.push_back(cl_brdf);
     }
 
-    CreateTextureInfoArray(texture_index_map);
-
-    texture_array.resize(texture_index_map.size());
-
-    for (const auto& item : texture_index_map) {
-        texture_array[item.second] = item.first;
-    }
+    return texture_index_map;
 }
 
 CLBrdf GetCLBrdf(const Material* material, map<TextureUbyte*, char>& texture_index_map) {
@@ -171,6 +176,15 @@ char RegisterTexture(TextureUbyte* texture, map<TextureUbyte*, char>& texture_in
     texture_index_map.emplace(texture, index);
 
     return index;
+}
+
+void SceneAdapter::CreateTextureArray(std::map<TextureUbyte*, char> texture_index_map) {
+
+    texture_array.resize(texture_index_map.size());
+
+    for (const auto& item : texture_index_map) {
+        texture_array[item.second] = item.first;
+    }
 }
 
 void SceneAdapter::CreateTextureInfoArray(map<TextureUbyte*, char>& texture_index_map) {

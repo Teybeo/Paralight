@@ -111,7 +111,7 @@ void Scene::Load_TriMesh() {
 
     std::string prefix = "../../models/";
 
-    std::string file = "blender_tests/cube.obj";
+//    std::string file = "blender_tests/cube.obj";
 //    std::string file = "blender_tests/bvh_tests_2.obj";
 //    std::string file = "blender_tests/textured_square.obj";
 //    std::string file = "blender_tests/multi_mesh.obj";
@@ -120,7 +120,7 @@ void Scene::Load_TriMesh() {
 //    std::string file = "dragon/dragon.obj";
 //    std::string file = "blender_tests/bvh_sponza.obj";
 //    std::string file = "blender_tests/crytek_sponza_cl.obj";
-//    std::string file = "crytek_sponza/crytek_vase_fixed.obj";
+    std::string file = "crytek_sponza/crytek_vase_fixed.obj";
 //    std::string file = "marko_sponza/objects/sponza.lwo";
 //    std::string file = "sibenik_cathedral/sibenik.obj";
 //    std::string file = "blender_tests/sibenik_cl.obj";

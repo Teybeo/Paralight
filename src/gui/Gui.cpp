@@ -60,16 +60,12 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
 
 void GUI::Update() {
 
-    scene->has_changed = false;
-
-    if (material_has_changed) {
-        scene->has_changed = true;
-    }
-
+    // Can't set it directly in Draw because Gui is drawn after Renderer
+    // so at next App::Update, Options::Update is called and it resets this flag
+    // Instead we set it here as Gui::Update is called after Options::Update
     if (options_has_changed)
         options->has_changed = true;
 
-    material_has_changed = false;
     options_has_changed = false;
 }
 
@@ -132,14 +128,14 @@ void GUI::showRendererSelection(bool cpp) {
         event.type = SDL_USEREVENT;
         event.user.code = BaseRenderer::EVENT_CPP_RENDERER;
         SDL_PushEvent(&event);
-//        has_changed = true;
+//        material_has_changed = true;
     }
     if (ImGui::RadioButton("OpenCL", !cpp)) {
         SDL_Event event;
         event.type = SDL_USEREVENT;
         event.user.code = BaseRenderer::EVENT_CL_RENDERER;
         SDL_PushEvent(&event);
-//        has_changed = true;
+//        material_has_changed = true;
     }
 }
 
@@ -265,6 +261,9 @@ void GUI::showObjectSettings() {
 
 void GUI::showMaterialSettings(Object3D* object) {
 
+    scene->material_has_changed = false;
+    scene->emission_has_changed = false;
+
     if (object->getEmissionIntensity() != -1) {
 
         Vec3 color = object->getEmissionColor().pow(1.f / 2.2f); // Linear to sRGB
@@ -272,11 +271,11 @@ void GUI::showMaterialSettings(Object3D* object) {
 
         if (ImGui::ColorEdit3("Light color", &color.x)) {
             object->setEmissionColor(color.pow(2.2f)); // sRGB to Linear
-            material_has_changed = true;
+            scene->emission_has_changed = true;
         }
         if (ImGui::SliderFloat("Light intensity", &intensity, 0, 100, "%.3f", 2)) {
             object->setEmissionIntensity(intensity);
-            material_has_changed = true;
+            scene->emission_has_changed = true;
         }
 
         return;
@@ -310,7 +309,7 @@ void GUI::showTextureSettings(std::shared_ptr<ITexture> texture, const char* tex
 
         if (ImGui::ColorEdit3(texture_name, &color_value.x)) {
             scalar_tex->value = color_value.pow(2.2f); // sRGB to Linear
-            material_has_changed = true;
+            scene->material_has_changed = true;
         }
         return;
     }
@@ -327,7 +326,7 @@ void GUI::showTextureSettings(std::shared_ptr<ITexture> texture, const char* tex
 
         if (ImGui::SliderFloat(texture_name, &value, 0.001f, 1.0f)) {
             scalar->value = std::pow(value, 2.2f); // sRGB to Linear
-            material_has_changed = true;
+            scene->material_has_changed = true;
         }
         return;
     }
@@ -402,14 +401,14 @@ void GUI::showBrdfStackSettings() {
         float reflectance = mirror->getReflectance();
         if (ImGui::SliderFloat("Reflectance", &reflectance, 0, 1)) {
             mirror->setReflectance(reflectance);
-            has_changed = true;
+            material_has_changed = true;
         }
     }
     if (lambertian != nullptr) {
         Vec3 plane_color = lambertian->getAlbedo();
         if (ImGui::ColorEdit3("Albedo", &plane_color.x)) {
             lambertian->setAlbedo(plane_color);
-            has_changed = true;
+            material_has_changed = true;
         }
     }
     if (cookTorrance != nullptr) {
@@ -417,11 +416,11 @@ void GUI::showBrdfStackSettings() {
         Vec3 reflectance = cookTorrance->getReflection();
         if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f)) {
             cookTorrance->setRawRoughness(roughness);
-            has_changed = true;
+            material_has_changed = true;
         }
         if (ImGui::SliderFloat("Reflectance", &reflectance.x, 0.0f, 1.0f)) {
             cookTorrance->setRawReflectance(reflectance.x);
-            has_changed = true;
+            material_has_changed = true;
         }
     }
 }*/

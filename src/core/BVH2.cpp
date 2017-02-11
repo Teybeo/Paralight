@@ -1,3 +1,4 @@
+#include <SDL_timer.h>
 #include "BVH2.h"
 
 #include "Scene.h"
@@ -30,7 +31,13 @@ BVH2::BVH2(const Scene* scene) {
         _objects.push_back(std::unique_ptr<Object3D>(object.get()));
     }
 
+    uint32_t start = SDL_GetTicks();
+
+    cout << "Building BVH..." << endl;
+
     root = unique_ptr<Node2>(RecursiveBuild(0, scene->objects.size()));
+
+    cout << "BVH built in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
 
 //    ComputeBoundingBoxes(root);
 

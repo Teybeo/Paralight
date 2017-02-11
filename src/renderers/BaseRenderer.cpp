@@ -38,7 +38,7 @@ void BaseRenderer::Update() {
     // The CLEAR_ACCUM_BIT will be mult/AND with the accumulation buffer and frame number
     // Setting it to 0 will clear them and setting to 1 will do nothing
     // Check if the current rendering config has changed
-    CLEAR_ACCUM_BIT = !(options->HasChanged() || camera_controls->HasChanged() || scene->has_changed || scene->env_map_has_changed);
+    CLEAR_ACCUM_BIT = !(options->HasChanged() || camera_controls->HasChanged() || scene->HasChanged());
 
     frame_number *= CLEAR_ACCUM_BIT;
     frame_number++;

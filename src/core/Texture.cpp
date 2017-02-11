@@ -24,7 +24,6 @@ Texture<T>::Texture(const std::string& path, bool store_in_linear) : path(path) 
 
     string ext = path.substr(path.find_last_of(".") + 1);
 
-
     if (ext == "hdr") {
         Load_HDR();
     }
@@ -36,8 +35,7 @@ Texture<T>::Texture(const std::string& path, bool store_in_linear) : path(path) 
     }
 
     cout << (width * height * sizeof(T) * 4) / 1024 << "Ko,  " << width << " x " << height << endl;
-    cout << "Loaded in " << (SDL_GetTicks() - start) / 1000.f << "s" << endl;
-
+    cout << "Loaded in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
 }
 
 template <typename T>

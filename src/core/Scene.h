@@ -41,12 +41,17 @@ public:
     float xz_angle = 0;
     Vec3 cam_pos {0, 0, 0};
     float debug_scale = 1;
-    bool has_changed = false;
+    bool material_has_changed = false;
     bool env_map_has_changed = false;
+    bool emission_has_changed = false;
 
     BoundingBox ComputeBBox() const;
 
     std::set<const TriMesh*> GetTriMeshes() const;
+
+    bool HasChanged() const {
+        return material_has_changed || env_map_has_changed || emission_has_changed;
+    }
 
     int GetTriangleCount() const {
         return triangle_count;
@@ -59,6 +64,7 @@ public:
     std::set<Material*> GetMaterialSet() const {
         return material_set;
     }
+
 };
 
 #endif //PATHTRACER_SCENE_H

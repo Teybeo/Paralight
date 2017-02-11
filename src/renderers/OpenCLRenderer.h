@@ -60,10 +60,11 @@ private:
     const int MAX_IMAGE_COUNT = 200;
     unsigned char image_count = 0;
 
-public:
-    OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls* pControls, Options* options,
-                   int platform_index = -1, int device_index = -1);
+    static const cl_mem_flags COPY_TO_DEVICE_FLAGS = CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY | CL_MEM_COPY_HOST_PTR;
 
+public:
+
+    OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls* pControls, Options* options, int platform_index = -1, int device_index = -1);
     ~OpenCLRenderer() override;
 
     void Draw() override;
@@ -99,6 +100,10 @@ private:
 
     void UpdateOptionsBuffer();
 
+    void UpdateMaterialBuffer();
+
+    void UpdateObjectBuffer();
+
     void SetKernelArguments(cl::Kernel& kernel) const;
 
     void KeyEvent(SDL_Keysym keysym, SDL_EventType type) override;
@@ -107,7 +112,6 @@ private:
     cl::Buffer CreateBuffer(std::vector<T> vec, cl_mem_flags flags);
 
     static void CL_CALLBACK debugCallback (const char *errinfo, const void *private_info, size_t cb, void *user_data);
-
 };
 
 #endif //OPENCL_OPENCLRENDERER_H

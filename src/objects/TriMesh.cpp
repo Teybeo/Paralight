@@ -53,7 +53,7 @@ TriMesh::TriMesh(const string& filename, string directory) {
     }
 
     auto end = high_resolution_clock::now();
-    cout << "File reading: " << std::chrono::duration<float>(end - start).count() << "s" << endl;
+    cout << "File reading: " << std::chrono::duration<float>(end - start).count() << " s" << endl;
 
     // Use the file directory to search for materials if no directory was passed in argument
     if (directory.empty()) {
@@ -65,7 +65,7 @@ TriMesh::TriMesh(const string& filename, string directory) {
     ImportAssimpMesh(pScene, directory);
 
     end = high_resolution_clock::now();
-    cout << "Import: " << std::chrono::duration<float>(end - start).count() << "s" << endl;
+    cout << "Import: " << std::chrono::duration<float>(end - start).count() << " s" << endl;
 
 
     start = high_resolution_clock::now();
@@ -73,7 +73,7 @@ TriMesh::TriMesh(const string& filename, string directory) {
     float radius = FindSphereBoundRadius(pos_array);
 
     end = high_resolution_clock::now();
-    cout << "Bounds scan: " << std::chrono::duration<float>(end - start).count() << "s" << endl;
+    cout << "Bounds scan: " << std::chrono::duration<float>(end - start).count() << " s" << endl;
 
     sphere_bounds = Sphere {0, 0, 0, radius};
 }

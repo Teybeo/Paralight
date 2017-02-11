@@ -150,7 +150,6 @@ void OpenCLRenderer::Update() {
         update_option = false;
     }
 
-//    if (program.Refresh(context, device, reload_kernel)) {
     if (program.HasChanged(reload_kernel)) {
         UpdateRenderKernel();
         CLEAR_ACCUM_BIT = 0;
@@ -158,14 +157,17 @@ void OpenCLRenderer::Update() {
         reload_kernel = false;
     }
 
-    if (scene->has_changed) {
-        UpdateSceneBuffers();
+    // TODO: Send an SDL_Event containing the changed object to avoid reloading the full arrays ?
+    if (scene->material_has_changed) {
+        UpdateMaterialBuffer();
+    }
+
+    if (scene->emission_has_changed) {
+        UpdateObjectBuffer();
     }
 
     if (scene->env_map_has_changed) {
         UpdateEnvMap();
-        CLEAR_ACCUM_BIT = 0;
-        frame_number = 0;
     }
     // Always updated because the frame number increments every frame
     UpdateOptionsBuffer();
@@ -205,7 +207,7 @@ Program CreateProgram(cl::Context& context, cl::CommandQueue& queue, cl::Device&
 
     program.Build(context, device);
 
-    cout << "Program compiled in " << (SDL_GetTicks() - start) / 1000.f << "s" << endl;
+    cout << "Program compiled in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
 
     return program;
 }
@@ -255,8 +257,6 @@ void OpenCLRenderer::CreateSceneBuffers(const Scene* scene) {
 
     SceneAdapter adapter = SceneAdapter {scene};
 
-    cl_mem_flags COPY_TO_DEVICE_FLAGS = CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY | CL_MEM_COPY_HOST_PTR;
-
     object_buffer = CreateBuffer(adapter.GetObjectArray(), COPY_TO_DEVICE_FLAGS);
     bvh_node_buffer = CreateBuffer(adapter.GetBvhNodeArray(), COPY_TO_DEVICE_FLAGS);
 
@@ -293,16 +293,75 @@ void OpenCLRenderer::UpdateSceneBuffers() {
     if (SDL_GetTicks() < last_check + 16)
         return;
 
-    last_check = SDL_GetTicks();
+
+    uint32_t start = SDL_GetTicks();
 
     SceneAdapter adapter {scene};
 
+    cout << "SceneAdapter created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+
+    start = SDL_GetTicks();
+
     CreateSceneBuffers(scene);
+
+    cout << "SceneBuffers created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
 
     SetKernelArguments(render_kernel);
 
     clOptions.sphere_count = 0;
     clOptions.plane_count = 0;
+
+    last_check = SDL_GetTicks();
+}
+
+void OpenCLRenderer::UpdateObjectBuffer() {
+
+    static uint32_t last_check = 0;
+
+    // Limit buffer update frequency to 60 hps
+    if (SDL_GetTicks() < last_check + 16)
+        return;
+
+    last_check = SDL_GetTicks();
+
+    uint32_t start = SDL_GetTicks();
+
+    SceneAdapter adapter {scene->objects, scene->GetMaterialSet()};
+
+    cout << "SceneAdapter created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+
+    start = SDL_GetTicks();
+
+    object_buffer = CreateBuffer(adapter.GetObjectArray(), COPY_TO_DEVICE_FLAGS);
+
+    cout << "Object buffer created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+
+    render_kernel.setArg(3, object_buffer);
+}
+
+void OpenCLRenderer::UpdateMaterialBuffer() {
+
+    static uint32_t last_check = 0;
+
+    // Limit buffer update frequency to 60 fps
+    if (SDL_GetTicks() < last_check + 16)
+        return;
+
+    last_check = SDL_GetTicks();
+
+    uint32_t start = SDL_GetTicks();
+
+    SceneAdapter adapter {scene->GetMaterialSet()};
+
+    cout << "SceneAdapter created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+
+    start = SDL_GetTicks();
+
+    brdfs_buffer = CreateBuffer(adapter.GetBrdfArray(), COPY_TO_DEVICE_FLAGS);
+
+    cout << "Brdf buffer created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+
+    render_kernel.setArg(7, brdfs_buffer);
 }
 
 // Update the clOptions struct to be sent to the opencl device

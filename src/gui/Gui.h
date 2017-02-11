@@ -33,8 +33,7 @@ class GUI {
 
 public:
 
-    bool options_has_changed;
-    bool material_has_changed = false;
+    bool options_has_changed = false;
 
     GUI() = delete;
     GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer_name, Scene* scene);
