@@ -13,7 +13,6 @@
 /// Bilinear texture sampling
 
 //TODO: [Opti] Replace Lambertian+Cook Torance with Ashikhmin to reduce register usage (around 70-80) which atm limits Kernel occupancy
-//TODO: [Opti] Precompute every object bbox for faster bvh build
 //TODO: [Feature] Set Orbit mode center to center of scene bbox
 //TODO: Environment map importance sampling
 //TODO: [Optim] Split the megakernel

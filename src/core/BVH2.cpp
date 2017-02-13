@@ -1,8 +1,9 @@
-#include <SDL_timer.h>
 #include "BVH2.h"
 
 #include "Scene.h"
 #include "objects/TriMesh.h"
+
+#include <SDL_timer.h>
 
 int BVH2::ray_bbox_test_count;
 int BVH2::ray_bbox_hit_count;
@@ -14,11 +15,17 @@ using std::endl;
 using std::vector;
 using std::unique_ptr;
 
-BoundingBox GetBoundingBoxForObjects(const vector<unique_ptr<Object3D>>& objects, int i, int i1);
+struct BuildInfo {
+    BoundingBox bbox;
+    Object3D* object;
+    Vec3 bbox_center;
+};
 
-int SplitSAH(vector<unique_ptr<Object3D>>& objects, int first, int last, BoundingBox box);
-int SplitAtPoint(vector<unique_ptr<Object3D>>& objects, int first, int last, char axis, float split_point);
-int SplitEqualSets(vector<unique_ptr<Object3D>>& objects, int first, int last, char axis) ;
+int SplitSAH      (vector<BuildInfo>& objects, int first, int last, BoundingBox box);
+int SplitAtPoint  (vector<BuildInfo>& objects, int first, int last, char axis, float split_point);
+int SplitEqualSets(vector<BuildInfo>& objects, int first, int last, char axis);
+
+BoundingBox GetBoundingBoxForObjects(const vector<BuildInfo>& objects, int i, int i1);
 
 void ComputeBoundingBoxes(const unique_ptr<Node2>& node);
 
@@ -27,18 +34,22 @@ void ComputeBoundingBoxes(const unique_ptr<Node2>& node);
 
 BVH2::BVH2(const Scene* scene) {
 
+    std::vector<BuildInfo> build_info_array;
+
+    build_info_array.reserve(scene->objects.size());
+
     for (const auto& object : scene->objects) {
-        _objects.push_back(std::unique_ptr<Object3D>(object.get()));
+        build_info_array.push_back( BuildInfo { object->ComputeBBox(), object.get(), object->ComputeBBox().GetCenter() });
     }
 
     uint32_t start = SDL_GetTicks();
 
     cout << "Building BVH..." << endl;
 
-    root = unique_ptr<Node2>(RecursiveBuild(0, scene->objects.size()));
+    root = unique_ptr<Node2>(RecursiveBuild(build_info_array, 0, (int) scene->objects.size()));
 
     cout << "BVH built in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
-
+    
 //    ComputeBoundingBoxes(root);
 
     cout << "BVH2 max depth: " << max_depth << endl;
@@ -50,7 +61,7 @@ BVH2::BVH2(const Scene* scene) {
  */
 int SplitAtPoint(vector<unique_ptr<Object3D>>& objects, int first, int last, char axis, float split_point) ;
 
-Node2* BVH2::RecursiveBuild(int first, int last, int depth) {
+Node2* BVH2::RecursiveBuild(vector<BuildInfo>& objects, int first, int last, int depth) {
 
     max_depth = std::max(max_depth, short(depth));
 
@@ -59,31 +70,33 @@ Node2* BVH2::RecursiveBuild(int first, int last, int depth) {
 
     int obj_count = last - first;
     if (obj_count == 1) {
-        node->object = _objects[first].get();
-        node->bbox = _objects[first].get()->ComputeBBox();
+        node->object = objects[first].object;
+        node->bbox = objects[first].bbox;
     }
     else {
 
-        BoundingBox bbox = GetBoundingBoxForObjects(_objects, first, last);
+        BoundingBox bbox = GetBoundingBoxForObjects(objects, first, last);
         if (bbox == BoundingBox()) {
-            node->object = _objects[first].get();
-            node->bbox = _objects[first].get()->ComputeBBox();
+            node->object = objects[first].object;
+            node->bbox = objects[first].bbox;
             return node;
         }
 
         char axis = bbox.GetLargestAxis();
         int middle;
-#ifdef MID_POINT
-        middle = SplitAtPoint(_objects, first, last, axis, bbox.GetCenter()[axis]);
+
+#if MID_POINT
+        middle = SplitAtPoint(objects, first, last, axis, bbox.GetCenter()[axis]);
 #elif defined EQUAL
-        middle = SplitEqualSets(_objects, first, last, axis);
+        middle = SplitEqualSets(objects, first, last, axis);
 #elif defined SAH
-        middle = SplitSAH(_objects, first, last, bbox);
+        middle = SplitSAH(objects, first, last, bbox);
 #endif
+
         node->bbox = bbox;
         node->split_axis = axis;
-        node->left_child = std::unique_ptr<Node2>(RecursiveBuild(first, middle, depth + 1));
-        node->right_child = std::unique_ptr<Node2>(RecursiveBuild(middle, last, depth + 1));
+        node->left_child = std::unique_ptr<Node2>(RecursiveBuild(objects, first, middle, depth + 1));
+        node->right_child = std::unique_ptr<Node2>(RecursiveBuild(objects, middle, last, depth + 1));
     }
 
     return node;
@@ -96,7 +109,7 @@ Node2* BVH2::RecursiveBuild(int first, int last, int depth) {
  *      compute the ratio of the parent bbox and this sub-bbox SA
  * Find the split for which the sum of each side SA ratio is minimal
  */
-int SplitSAH(vector<unique_ptr<Object3D>>& objects, int first, int last, BoundingBox box) {
+int SplitSAH(vector<BuildInfo>& objects, int first, int last, BoundingBox box) {
 
     char axis = box.GetLargestAxis();
 
@@ -122,15 +135,15 @@ int SplitSAH(vector<unique_ptr<Object3D>>& objects, int first, int last, Boundin
         int left_count = 0;
         int right_count = 0;
         for (int j = first; j < last; ++j) {
-            unique_ptr<Object3D>::pointer object = objects[j].get();
-            float obj_center = object->ComputeBBox().GetCenter()[axis];
+            const BuildInfo& object = objects[j];
+            float obj_center = object.bbox_center[axis];
 //            float obj_center = object->GetCenter()[axis];
             if (obj_center <= split_point_array[i]) {
-                left = left.ExtendsBy(object->ComputeBBox());
+                left.ExtendsBy(object.bbox);
                 left_count++;
             }
             else {
-                right = right.ExtendsBy(object->ComputeBBox());
+                right.ExtendsBy(object.bbox);
                 right_count++;
             }
         }
@@ -153,12 +166,12 @@ int SplitSAH(vector<unique_ptr<Object3D>>& objects, int first, int last, Boundin
 /**
  * Split all objects in 2 sets separated by the provided split_point along the axis
  */
-int SplitAtPoint(vector<unique_ptr<Object3D>>& objects, int first, int last, char axis, float split_point) {
+int SplitAtPoint(vector<BuildInfo>& objects, int first, int last, char axis, float split_point) {
 
     // Split all objects in 2 sets separated by the middle point of the bbox largest axis
-    const auto& middle_it = std::stable_partition(&objects[first], &objects[last], [=] (unique_ptr<Object3D>& i) {
+    const auto& middle_it = std::stable_partition(&objects[first], &objects[last], [=] (BuildInfo& i) {
 //        return i->GetCenter()[axis] < split_point;
-        return i->ComputeBBox().GetCenter()[axis] < split_point;
+        return i.bbox_center[axis] < split_point;
     });
 
     int middle = static_cast<int>(middle_it - &objects.front());
@@ -172,21 +185,21 @@ int SplitAtPoint(vector<unique_ptr<Object3D>>& objects, int first, int last, cha
 /**
  * Slit all objects in 2 sets of equal sizes
  */
-int SplitEqualSets(vector<unique_ptr<Object3D>>& objects, int first, int last, char axis) {
+int SplitEqualSets(vector<BuildInfo>& objects, int first, int last, char axis) {
     // Slit all objects in 2 sets of equal sizes
     int middle = (last + first) / 2;
-    std::nth_element(&objects[first], &objects[middle], &objects[last], [=] (unique_ptr<Object3D>& a, unique_ptr<Object3D>& b) {
-        return a->GetCenter()[axis] < b->GetCenter()[axis];
+    std::nth_element(&objects[first], &objects[middle], &objects[last], [=] (BuildInfo& a, BuildInfo& b) {
+        return a.object->GetCenter()[axis] < b.object->GetCenter()[axis];
     });
 
     return middle;
 }
 
-BoundingBox GetBoundingBoxForObjects(const vector<unique_ptr<Object3D>>& objects, int start, int end) {
+BoundingBox GetBoundingBoxForObjects(const vector<BuildInfo>& objects, int start, int end) {
 
     BoundingBox bbox;
     for (int i = start; i < end; ++i) {
-        bbox = bbox.ExtendsBy(objects[i]->ComputeBBox());
+        bbox.ExtendsBy(objects[i].bbox);
     }
     return bbox;
 }

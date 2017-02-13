@@ -12,33 +12,20 @@
 
 typedef struct Object3D Object3D;
 typedef struct Scene Scene;
+typedef struct BuildInfo BuildInfo;
 
 class BVH2 {
 
     std::unique_ptr<Node2> root;
-    std::vector<std::unique_ptr<Object3D>> _objects;
-
-    struct QueueElement
-    {
-        const Node2 *node; // octree node held by this node in the tree
-        float t; // used as key
-        QueueElement() = default;
-        QueueElement(const Node2 *node, float t) : node(node), t(t) {}
-        // comparator is > instead of < so priority_queue behaves like a min-heap
-        friend bool operator < (const QueueElement &a, const QueueElement &b) { return a.t > b.t; }
-    };
-
-    // To avoid high de/alloc counts, we subclass the queue to access its container and reserve it
-    class MyPQueue : public std::priority_queue<BVH2::QueueElement>
-    {
-    public:
-        MyPQueue(size_t reserve_size)
-        {
-            this->c.reserve(reserve_size);
-        }
-    };
+    short max_depth = 0;
+    int node_count = 0;
 
 public:
+
+    static int ray_bbox_test_count;
+    static int ray_bbox_hit_count;
+    static int ray_obj_test_count;
+    static int ray_obj_hit_count;
 
     BVH2() = default;
 
@@ -47,11 +34,6 @@ public:
     bool FindNearestIntersection(const Ray& ray, float& dist_out, Object3D*& hit_object);
 
     bool FindNearestIntersectionOpti(const Ray& ray, float& dist_out, Object3D*& hit_object);
-
-    static int ray_bbox_test_count;
-    static int ray_bbox_hit_count;
-    static int ray_obj_test_count;
-    static int ray_obj_hit_count;
 
     static void ResetCounters();
 
@@ -67,16 +49,13 @@ public:
 
 private:
 
+    Node2* RecursiveBuild(std::vector<BuildInfo>& objects, int first, int last, int depth = 0);
+
     bool IntersectNode(const FastRay& ray, float& dist_out, Object3D*& hit_object, const std::unique_ptr<Node2>& node);
 
     bool IntersectNodeFast(const FastRay& ray, float& t_near_candidate, Object3D*& hit_object, const std::unique_ptr<Node2>& node);
 
     bool DebugIntersectNode(const FastRay& ray, float& dist_out, Object3D*& hit_object, int depth, int debug_depth, const std::unique_ptr<Node2>& node);
-
-    short max_depth = 0;
-    int node_count = 0;
-
-    Node2* RecursiveBuild(int first, int last, int depth = 0);
 
     bool IntersectNodeOpti(const FastRay& ray, float& dist_out, Object3D*& hit_object, const std::unique_ptr<Node2>& node, const char direction_sign);
 };

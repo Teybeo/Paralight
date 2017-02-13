@@ -54,9 +54,9 @@ public:
 
     virtual BoundingBox ComputeBBox() const {
         return shape->ComputeBBox();
-    };
+    }
 
-    virtual Vec3 GetCenter()const {
+    virtual Vec3 GetCenter() const {
 //        return shape->ComputeBBox().GetCenter();
         return shape->GetCenter();
     }

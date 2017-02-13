@@ -367,7 +367,7 @@ BoundingBox Scene::ComputeBBox() const {
     BoundingBox bbox;
 
     for (const auto& object : objects) {
-        bbox = bbox.ExtendsBy(object->ComputeBBox());
+        bbox.ExtendsBy(object->ComputeBBox());
     }
 
     return bbox;

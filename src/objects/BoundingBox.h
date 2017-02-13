@@ -29,22 +29,20 @@ public:
 
     virtual BoundingBox ComputeBBox() const override;
 
-    BoundingBox ExtendsBy(Vec3 point) const {
+    BoundingBox& ExtendsBy(const Vec3& point) {
 
-        return BoundingBox {
-                {   std::min(min.x, point.x),
-                    std::min(min.y, point.y),
-                    std::min(min.z, point.z)
-                },
-                {   std::max(max.x, point.x),
-                    std::max(max.y, point.y),
-                    std::max(max.z, point.z)
-                }
-        };
+        min.x = std::min(min.x, point.x);
+        min.y = std::min(min.y, point.y);
+        min.z = std::min(min.z, point.z);
+
+        max.x = std::max(max.x, point.x);
+        max.y = std::max(max.y, point.y);
+        max.z = std::max(max.z, point.z);
+        return *this;
     }
 
-    BoundingBox ExtendsBy(const BoundingBox& other) const {
-        return ExtendsBy(other.min, other.max);
+    BoundingBox& ExtendsBy(const BoundingBox& other) {
+        return ExtendsBy(other.min).ExtendsBy(other.max);
     }
 
     Vec3 GetCenter() const {
@@ -66,25 +64,6 @@ public:
     char GetLargestAxis();
 
     float GetSurfaceArea() const;
-
-private:
-
-    BoundingBox ExtendsBy(Vec3 min, Vec3 max) const {
-
-        return ExtendsBy(min).ExtendsBy(max);
-
-        Vec3 new_min {std::min(this->min.x, min.x),
-                      std::min(this->min.y, min.y),
-                      std::min(this->min.z, min.z)};
-
-        Vec3 new_max {std::max(this->max.x, max.x),
-                      std::max(this->max.y, max.y),
-                      std::max(this->max.z, max.z)};
-
-        return BoundingBox {new_min, new_max};
-    }
-
-
 };
 
 
