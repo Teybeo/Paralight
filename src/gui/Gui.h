@@ -12,7 +12,7 @@ typedef struct Object3D Object3D;
 typedef struct Scene Scene;
 
 class Options;
-class ITexture;
+class Texture;
 
 class GUI {
     Scene* scene;
@@ -23,32 +23,28 @@ class GUI {
     ImGuiWindowFlags window_flags;
     int selected_platform;
     int selected_device;
-    std::vector<std::string> env_map_array;
+    std::vector<std::string> envmap_array;
+    std::vector<std::string> model_array;
     const char* env_map_dir = "../../envmaps/";
-    int env_map_index = 0;
+    const char* model_dir = "../../models/";
+    int envmap_index = 0;
+    int model_index = 0;
+    bool options_has_changed = false;
 
-    void showObjectSettings();
+    void showRendererSettings();
     void showOpenCLSettings();
     void showLightingSettings();
+    void showObjectSettings();
+    void showMaterialSettings(Object3D* object);
+    void showTextureSettings(std::shared_ptr<Texture> texture, const char* texture_name);
 
 public:
-
-    bool options_has_changed = false;
 
     GUI() = delete;
     GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer_name, Scene* scene);
 
     void Draw();
     void Update();
-
-    void showMaterialSettings(Object3D* object);
-
-    void showRendererSelection(bool cpp);
-
-    void showTextureSettings(std::shared_ptr<ITexture> texture, const char* texture_name);
-
-    void showBrdfStackSettings();
-
 };
 
 

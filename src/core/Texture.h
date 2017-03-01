@@ -12,7 +12,7 @@ struct alignas(4) CLTextureInfo {
     char mapping;
 };
 
-class ITexture {
+class Texture {
 public:
     virtual Vec3 Evaluate(const Vec3& direction) = 0;
 
@@ -27,18 +27,18 @@ public:
 };
 
 template <typename T>
-class Texture : public ITexture {
+class ImageTexture : public Texture {
 public:
     //TODO: unique_ptr here
     T* data = nullptr;
+    char channel_count = 0;
     Vec3 constant = 0;
-    const bool is_pfm_cross = false;
     const std::string path;
     size_t width = 0;
     size_t height = 0;
 
-    Texture(const std::string& path, bool store_in_linear = true);
-    ~Texture();
+    ImageTexture(const std::string& path, bool store_in_linear = true);
+    ~ImageTexture();
 
     Vec3 Evaluate(const Vec3& uv) override;
 
@@ -50,17 +50,15 @@ public:
 
 private:
     inline Vec3 Sample(float u, float v);
-    inline Vec3 Sample_Cubemap(const Vec3& direction);
 
     void Load_Generic(bool store_in_linear);
-    void Load_FPM();
     void Load_HDR();
 
     void ConvertToLinear();
 };
 
 template <typename T>
-class ValueTexture : public ITexture {
+class ValueTexture : public Texture {
 
 public:
 
@@ -77,8 +75,8 @@ public:
 typedef ValueTexture<Vec3> ValueTex3f;
 typedef ValueTexture<float> ValueTex1f;
 
-typedef Texture<float> TextureFloat;
-typedef Texture<uint8_t> TextureUbyte;
+typedef ImageTexture<float> TextureFloat;
+typedef ImageTexture<uint8_t> TextureUbyte;
 
 
 #endif //OPENCL_TEXTURE_H

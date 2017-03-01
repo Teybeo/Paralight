@@ -13,10 +13,12 @@
 using std::string;
 using std::vector;
 
-static void ShowBVHTree(bool* opened, const BVH& bvh);
-
 int GetEnvMapIndex(const string& env_map, vector<string> env_map_array);
 vector<string> GetEnvMapArray(const char* env_map_dir);
+
+std::vector<std::string> GetModelArray(const string& model_dir_path) ;
+
+static void showBVHStatistics() ;
 
 using std::shared_ptr;
 
@@ -31,9 +33,11 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
 
     cout << io.Fonts->Fonts.size() << " fonts" << endl;
 
-    env_map_array = GetEnvMapArray(env_map_dir);
-    env_map_index = GetEnvMapIndex(scene->env_map->path, env_map_array);
-    
+    envmap_array = GetEnvMapArray(env_map_dir);
+    envmap_index = GetEnvMapIndex(scene->env_map->path, envmap_array);
+
+    model_array = GetModelArray(model_dir);
+
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
     window_size = ImVec2 {w * 0.9f, h * 0.9f};
@@ -58,17 +62,6 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
     }
 }
 
-void GUI::Update() {
-
-    // Can't set it directly in Draw because Gui is drawn after Renderer
-    // so at next App::Update, Options::Update is called and it resets this flag
-    // Instead we set it here as Gui::Update is called after Options::Update
-    if (options_has_changed)
-        options->has_changed = true;
-
-    options_has_changed = false;
-}
-
 void GUI::Draw() {
 
     int w, h;
@@ -82,36 +75,14 @@ void GUI::Draw() {
 
     ImGui::Begin("Settings", nullptr, window_flags);
     {
-        if (ImGui::CollapsingHeader("Renderer", nullptr, true, true)) {
-            bool cpp = (typeid(*renderer) == typeid(CppRenderer));
-            showRendererSelection(cpp);
-            if (cpp == false) {
-                showOpenCLSettings();
-            }
-        }
+        showRendererSettings();
         showLightingSettings();
         showObjectSettings();
-//        bool opened = false;
-//        ShowExampleAppPropertyEditor(&opened);
-        bool cpp = (typeid(*renderer) == typeid(CppRenderer));
-        if (cpp) {
-//            ShowBVHTree(&opened, static_cast<CppRenderer*>(renderer)->GetScene()->bvh);
-        }
-        ImGui::Text("Application average %.0f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-        ImGui::Text("BBox Tests: %.2f K", BVH2::ray_bbox_test_count / 1000.f);
-        ImGui::Text("Object Tests: %.2f K", BVH2::ray_obj_test_count / 1000.f);
-
-        ImGui::Text("Object Tests Avoided: %.2f K (%g %%)", (BVH2::ray_bbox_test_count - BVH2::ray_obj_test_count) / 1000.f, ((BVH2::ray_bbox_test_count - BVH2::ray_obj_test_count) / float(BVH2::ray_bbox_test_count)) * 100.f);
-
-        ImGui::Text("BBox Tests Success Rate: %.2f K (%g %%)", BVH2::ray_bbox_hit_count / 1000.f, BVH2::ray_bbox_hit_count / float(BVH2::ray_bbox_test_count) * 100);
-        ImGui::Text("Object Tests Success Rate: %.2f K (%g %%)", BVH2::ray_obj_hit_count / 1000.f, BVH2::ray_obj_hit_count / float(BVH2::ray_obj_test_count) * 100);
-
-//        ImGui::Text("Triangle Hit/Test percent: %.4f %%", TriMesh::GetHitCount() / float(TriMesh::GetTestCount()) * 100);
-//        ImGui::Text("Triangle Tests: %.2f K", TriMesh::GetTestCount() / 1000.f);
-//        ImGui::Text("Triangle Hit/Test percent: %.4f %%", TriMesh::GetHitCount() / float(TriMesh::GetTestCount()) * 100);
-        ImGui::End();
+//        ShowBVHTree(scene->bvh);
+        ImGui::Text("Avg %.0f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+//        showBVHStatistics();
     }
+    ImGui::End();
 
     // Rendering
     glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
@@ -122,23 +93,38 @@ void GUI::Draw() {
     SDL_GL_SwapWindow(window);
 }
 
-void GUI::showRendererSelection(bool cpp) {
-    if (ImGui::RadioButton("C++", cpp)) {
-        SDL_Event event;
-        event.type = SDL_USEREVENT;
-        event.user.code = BaseRenderer::EVENT_CPP_RENDERER;
-        SDL_PushEvent(&event);
-//        material_has_changed = true;
-    }
-    if (ImGui::RadioButton("OpenCL", !cpp)) {
-        SDL_Event event;
-        event.type = SDL_USEREVENT;
-        event.user.code = BaseRenderer::EVENT_CL_RENDERER;
-        SDL_PushEvent(&event);
-//        material_has_changed = true;
-    }
+void GUI::Update() {
+
+    // Can't set it directly in Draw because Gui is drawn after Renderer
+    // so at next App::Update, Options::Update is called and it resets this flag
+    // Instead we set it here as Gui::Update is called after Options::Update
+    if (options_has_changed)
+        options->has_changed = true;
+
+    options_has_changed = false;
 }
 
+void GUI::showRendererSettings() {
+
+    if (ImGui::CollapsingHeader("Renderer", nullptr, true, true)) {
+        bool is_opencl = (typeid(*renderer) == typeid(OpenCLRenderer));
+        if (ImGui::RadioButton("C++", !is_opencl)) {
+            SDL_Event event;
+            event.type = SDL_USEREVENT;
+            event.user.code = BaseRenderer::EVENT_CPP_RENDERER;
+            SDL_PushEvent(&event);
+        }
+        if (ImGui::RadioButton("OpenCL", is_opencl)) {
+            SDL_Event event;
+            event.type = SDL_USEREVENT;
+            event.user.code = BaseRenderer::EVENT_CL_RENDERER;
+            SDL_PushEvent(&event);
+        }
+        if (is_opencl == false) {
+            showOpenCLSettings();
+        }
+    }
+}
 
 void GUI::showOpenCLSettings() {
 
@@ -185,31 +171,42 @@ void GUI::showOpenCLSettings() {
 }
 
 bool item_getter(void* data, int current_index, const char** name) {
-    vector<string> env_map_array = *(vector<string>*)data;
-    string env_map = env_map_array[current_index];
+    vector<string>& envmap_array = *(vector<string>*)data;
+    string& env_map = envmap_array[current_index];
     // Remove the folder subpaths for display
-    env_map = env_map.substr(env_map.find_last_of("/\\") + 1);
-    *name = env_map.c_str();
+    size_t offset = env_map.find_last_of("/\\") + 1;
+    *name = env_map.c_str() + offset;
     return true;
 }
 
 void GUI::showLightingSettings() {
 
-    scene->env_map_has_changed = false;
+    scene->envmap_has_changed = false;
+    scene->model_has_changed = false;
 
-    if (ImGui::CollapsingHeader("Lighting", nullptr, true, true)) {
+    if (ImGui::CollapsingHeader("Render settings", nullptr, true, true)) {
 
         ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
+            int temp_envmap_index = envmap_index;
+            ImGui::Combo("Environnement Map", &temp_envmap_index, item_getter, &envmap_array, (int) envmap_array.size());
 
-        int index = env_map_index;
-        ImGui::Combo("Environnement Map", &index, item_getter, &env_map_array, (int) env_map_array.size());
+            if (temp_envmap_index != envmap_index) {
+                envmap_index = temp_envmap_index;
+                scene->env_map.reset(new TextureFloat {envmap_array[envmap_index]});
+                scene->envmap_has_changed = true;
+            }
+        ImGui::PopItemWidth();
 
-        if (index != env_map_index) {
-            env_map_index = index;
-            scene->env_map = std::unique_ptr<TextureFloat>( new TextureFloat {env_map_array[env_map_index]});
-            scene->env_map_has_changed = true;
-        }
+        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
+            int temp_model_index = model_index;
+            bool changed = ImGui::Combo("Model", &temp_model_index, item_getter, &model_array, (int) model_array.size());
 
+            if (changed || temp_model_index != model_index) {
+                model_index = temp_model_index;
+                scene->Clear();
+                scene->LoadObjects(model_array[model_index]);
+                scene->model_has_changed = true;
+            }
         ImGui::PopItemWidth();
 
         bool lambertian = (bool) (options->brdf_bitfield & LAMBERTIAN);
@@ -226,15 +223,15 @@ void GUI::showLightingSettings() {
         options_has_changed |= ImGui::Checkbox("Emissive lighting", &options->use_emissive_lighting);
         options_has_changed |= ImGui::Checkbox("Distant Environnment lighting", &options->use_distant_env_lighting);
         options_has_changed |= ImGui::Checkbox("Debug", &renderer->debug);
-        if (ImGui::SliderInt("Depth target", &options->depth_target, 0, 30, "%.0f")) {
-            options_has_changed = true;
-        }
+//        if (ImGui::SliderInt("Depth target", &options->depth_target, 0, 30, "%.0f")) {
+//            options_has_changed = true;
+//        }
     }
 
 }
 
-//TODO: Maybe have a member or friend function on objects that present and set the state directly ?
 void GUI::showObjectSettings() {
+
     if (ImGui::CollapsingHeader("Object settings", nullptr, true, true)) {
 
         Object3D* object = renderer->GetSelectedObject();
@@ -242,20 +239,6 @@ void GUI::showObjectSettings() {
             return;
 
         showMaterialSettings(object);
-
-//        Vec3 origin = object->origin;
-//        if (ImGui::SliderFloat3("Object position", &origin.x, -30.0f, 30.0f)) {
-//            object->origin = origin;
-//        }
-
-        Plane* p = dynamic_cast<Plane*>(object->shape);
-        if (p != nullptr) {
-            Vec3 normal = p->normal;
-            if (ImGui::SliderFloat3("Plane normal", &normal.x, -1.0f, 1.0f)) {
-                normal = normal.normalize();
-                p->normal = normal;
-            }
-        }
     }
 }
 
@@ -295,7 +278,7 @@ void GUI::showMaterialSettings(Object3D* object) {
     }
 }
 
-void GUI::showTextureSettings(std::shared_ptr<ITexture> texture, const char* texture_name) {
+void GUI::showTextureSettings(std::shared_ptr<Texture> texture, const char* texture_name) {
 
     ValueTex3f* scalar_tex = dynamic_cast<ValueTex3f*>(texture.get());
 
@@ -342,6 +325,35 @@ void GUI::showTextureSettings(std::shared_ptr<ITexture> texture, const char* tex
     }
 }
 
+// tinydir_open_sorted read files/directories inside specified path
+
+std::vector<std::string> GetModelArray(const string& model_dir_path) {
+
+    tinydir_dir dir;
+    tinydir_open_sorted(&dir, model_dir_path.c_str());
+
+    vector<string> model_array;
+
+    for (size_t i = 0; i < dir.n_files; i++) {
+
+        tinydir_file file;
+        tinydir_readfile_n(&dir, &file, i);
+
+        if (file.is_dir && file.name != string(".") && file.name != string("..")) {
+            const auto& sub_array = GetModelArray(string(file.path) + "/");
+            model_array.insert(model_array.end(), sub_array.begin(), sub_array.end());
+        }
+        else if (strcmp(file.extension, "obj") == 0) {
+            model_array.push_back(model_dir_path + file.name);
+        }
+
+    }
+
+    tinydir_close(&dir);
+
+    return model_array;
+}
+
 vector<string> GetEnvMapArray(const char* env_map_dir) {
 
     tinydir_dir dir;
@@ -355,9 +367,7 @@ vector<string> GetEnvMapArray(const char* env_map_dir) {
         tinydir_readfile_n(&dir, &file, i);
 
         if (strcmp(file.extension, "hdr") == 0) {
-            string temp { env_map_dir };
-            temp += file.name;
-            env_map_array.push_back(temp);
+            env_map_array.push_back(string(env_map_dir) + file.name);
         }
     }
 
@@ -374,58 +384,7 @@ int GetEnvMapIndex(const string& env_map, vector<string> env_map_array) {
     return 0;
 }
 
-/*
- //FIXME Probably dead code that can be removed
-void GUI::showBrdfStackSettings() {
-
-    Object3D* object = renderer->GetScene()->objects.back().get();
-    BrdfStack* brdf_stack = object->material->GetBrdfStack();
-    Brdf* const* brdf_array = brdf_stack->getBrdfArray();
-
-    Lambertian* lambertian = nullptr;
-    CookTorrance* cookTorrance = nullptr;
-    Mirror* mirror = nullptr;
-
-    for (int i = 0; i < brdf_stack->brdf_count; ++i) {
-        if (brdf_array[i]->type == LAMBERTIAN)
-            lambertian = static_cast<Lambertian*>(brdf_array[i]);
-        else if (brdf_array[i]->type == MICROFACET)
-            cookTorrance = static_cast<CookTorrance*>(brdf_array[i]);
-        else if (brdf_array[i]->type == MIRROR)
-            mirror = static_cast<Mirror*>(brdf_array[i]);
-
-    }
-//        Lambertian* lambertian = (Lambertian*) p->brdf_stack->getBrdfArray()[0];
-//        CookTorrance* cookTorrance = (CookTorrance*) p->brdf_stack->getBrdfArray()[1];
-    if (mirror != nullptr) {
-        float reflectance = mirror->getReflectance();
-        if (ImGui::SliderFloat("Reflectance", &reflectance, 0, 1)) {
-            mirror->setReflectance(reflectance);
-            material_has_changed = true;
-        }
-    }
-    if (lambertian != nullptr) {
-        Vec3 plane_color = lambertian->getAlbedo();
-        if (ImGui::ColorEdit3("Albedo", &plane_color.x)) {
-            lambertian->setAlbedo(plane_color);
-            material_has_changed = true;
-        }
-    }
-    if (cookTorrance != nullptr) {
-        float roughness = cookTorrance->getRoughness();
-        Vec3 reflectance = cookTorrance->getReflection();
-        if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f)) {
-            cookTorrance->setRawRoughness(roughness);
-            material_has_changed = true;
-        }
-        if (ImGui::SliderFloat("Reflectance", &reflectance.x, 0.0f, 1.0f)) {
-            cookTorrance->setRawReflectance(reflectance.x);
-            material_has_changed = true;
-        }
-    }
-}*/
-
-static void ShowBVHTree(bool* opened, const BVH& bvh)
+static void ShowBVHTree(const BVH& bvh)
 {
 //    ImGui::SetNextWindowSize(ImVec2(430,450), ImGuiSetCond_FirstUseEver);
 //    if (!ImGui::Begin("Example: Property editor", opened))
@@ -534,4 +493,13 @@ static void ShowBVHTree(bool* opened, const BVH& bvh)
     }
 }
 
+static void showBVHStatistics() {
+    ImGui::Text("BBox Tests: %.2f K", BVH2::ray_bbox_test_count / 1000.f);
+    ImGui::Text("Object Tests: %.2f K", BVH2::ray_obj_test_count / 1000.f);
+
+    ImGui::Text("Object Tests Avoided: %.2f K (%g %%)", (BVH2::ray_bbox_test_count - BVH2::ray_obj_test_count) / 1000.f, ((BVH2::ray_bbox_test_count - BVH2::ray_obj_test_count) / float(BVH2::ray_bbox_test_count)) * 100.f);
+
+    ImGui::Text("BBox Tests Success Rate: %.2f K (%g %%)", BVH2::ray_bbox_hit_count / 1000.f, BVH2::ray_bbox_hit_count / float(BVH2::ray_bbox_test_count) * 100);
+    ImGui::Text("Object Tests Success Rate: %.2f K (%g %%)", BVH2::ray_obj_hit_count / 1000.f, BVH2::ray_obj_hit_count / float(BVH2::ray_obj_test_count) * 100);
+}
 

@@ -43,21 +43,21 @@ public:
 
 class Standard : public Material {
 
-    std::shared_ptr<ITexture> albedo_map;
-    std::shared_ptr<ITexture> roughness_map;
-    std::shared_ptr<ITexture> reflectance_map;
-    std::shared_ptr<ITexture> normal_map;
+    std::shared_ptr<Texture> albedo_map;
+    std::shared_ptr<Texture> roughness_map;
+    std::shared_ptr<Texture> reflectance_map;
+    std::shared_ptr<Texture> normal_map;
 
 public:
 
     Standard() = default;
 
-    Standard(const std::shared_ptr<ITexture>& albedo_map, const std::shared_ptr<ITexture>& roughness_map, const std::shared_ptr<ITexture>& reflectance_map, const std::shared_ptr<ITexture> normal_map = nullptr)
+    Standard(const std::shared_ptr<Texture>& albedo_map, const std::shared_ptr<Texture>& roughness_map, const std::shared_ptr<Texture>& reflectance_map, const std::shared_ptr<Texture> normal_map = nullptr)
             :  Material{new StandardStack(0, 0, 0)}, albedo_map(albedo_map), roughness_map(roughness_map), reflectance_map(reflectance_map), normal_map{normal_map}
     {
     }
 
-    Standard(Vec3 albedo, float roughness, Vec3 reflectance, const std::shared_ptr<ITexture> normal_map = nullptr)
+    Standard(Vec3 albedo, float roughness, Vec3 reflectance, const std::shared_ptr<Texture> normal_map = nullptr)
             : Material{new StandardStack(0, 0, 0)}
     {
         albedo_map      = std::make_shared<ValueTex3f>(albedo);
@@ -73,7 +73,7 @@ public:
         ai_material->Get(AI_MATKEY_NAME, name);
         cout << "Material: [" << name.C_Str() << "]" << endl;
 
-        auto ImportTexture = [&] (std::shared_ptr<ITexture>& texture_map, aiTextureType type, bool store_in_linear = true) {
+        auto ImportTexture = [&] (std::shared_ptr<Texture>& texture_map, aiTextureType type, bool store_in_linear = true) {
 
             if (ai_material->GetTextureCount(type) > 0) {
 
@@ -90,7 +90,7 @@ public:
             }
         };
 
-        auto ImportValue = [&] (std::shared_ptr<ITexture>& texture_map, const char* matkey, Vec3 default_value, bool store_in_linear = true) {
+        auto ImportValue = [&] (std::shared_ptr<Texture>& texture_map, const char* matkey, Vec3 default_value, bool store_in_linear = true) {
 
             aiColor3D ai_color;
 
@@ -159,19 +159,19 @@ public:
         return stack;
     }
 
-    std::shared_ptr<ITexture> GetAlbedo() const {
+    std::shared_ptr<Texture> GetAlbedo() const {
         return albedo_map;
     }
 
-    std::shared_ptr<ITexture> GetRoughness() const {
+    std::shared_ptr<Texture> GetRoughness() const {
         return roughness_map;
     }
 
-    std::shared_ptr<ITexture> GetReflectance() const {
+    std::shared_ptr<Texture> GetReflectance() const {
         return reflectance_map;
     }
 
-    std::shared_ptr<ITexture> GetNormal() const {
+    std::shared_ptr<Texture> GetNormal() const {
         return normal_map;
     }
 };
@@ -201,7 +201,7 @@ public:
         return stack;
     }
 
-    std::shared_ptr<ITexture> GetAlbedo() const {
+    std::shared_ptr<Texture> GetAlbedo() const {
         return albedo_map;
     }
 

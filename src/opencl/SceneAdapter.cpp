@@ -17,7 +17,7 @@ static int SetLastChildPointers2(CLNode2& node, vector<CLNode2>& node_array, int
 static char RegisterTexture(TextureUbyte* texture, map<TextureUbyte*, char>& texture_index_map);
 
 template <typename T = float>
-static void SetTextureParameter(map<TextureUbyte*, char>& texture_index_map, const shared_ptr<ITexture>& tex, char& tex_index, T* scalar = nullptr);
+static void SetTextureParameter(map<TextureUbyte*, char>& texture_index_map, const shared_ptr<Texture>& tex, char& tex_index, T* scalar = nullptr);
 
 CLBrdf GetCLBrdf(const Material* material, map<TextureUbyte*, char>& texture_index_map) ;
 CLObject3D GetCLObject3D(const Object3D& object);
@@ -142,7 +142,7 @@ CLBrdf GetCLBrdf(const Material* material, map<TextureUbyte*, char>& texture_ind
 }
 
 template <typename T = float>
-void SetTextureParameter(map<TextureUbyte*, char>& texture_index_map, const shared_ptr<ITexture>& tex, char& tex_index, T* scalar) {
+void SetTextureParameter(map<TextureUbyte*, char>& texture_index_map, const shared_ptr<Texture>& tex, char& tex_index, T* scalar) {
 
     ValueTexture<T>* value_texture = dynamic_cast<ValueTexture<T>*>(tex.get());
     TextureUbyte* texture = dynamic_cast<TextureUbyte*>(tex.get());
@@ -171,7 +171,6 @@ char RegisterTexture(TextureUbyte* texture, map<TextureUbyte*, char>& texture_in
     }
 
     char index = (char) texture_index_map.size();
-
 
     texture_index_map.emplace(texture, index);
 

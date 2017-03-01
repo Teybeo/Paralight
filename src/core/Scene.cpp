@@ -16,7 +16,7 @@ using std::vector;
 using std::set;
 using std::string;
 
-Scene::Scene() {
+Scene::Scene(string model_file) {
 
     string env_dir = "../../envmaps/";
 
@@ -31,86 +31,7 @@ Scene::Scene() {
 
     env_map = std::unique_ptr<TextureFloat>( new TextureFloat {env_dir + env});
 
-//    Load_CornellBox();
-//    Load_SphereGrid(2);
-//    Load_MirrorRoom();
-//    Load_TexturedSphere();
-    Load_TriMesh();
-
-    bvh2 = new BVH2 {this};
-
-//    bvh = BVH {this};
-    {
-        Vec3 min = bvh2->GetRoot()->bbox.min;
-        Vec3 max = bvh2->GetRoot()->bbox.max;
-        debug_scale = std::sqrt((max * max).max() + (min * min).max());
-        debug_scale = ((max - min) / 2.f).max();
-        cout << "Debug scale " << debug_scale << endl;
-    }
-
-    for (const auto& object : objects) {
-        if (typeid(*object->shape) == typeid(Triangle))
-            triangle_count++;
-    }
-
-    const auto& trimeshes = GetTriMeshes();
-    for (const auto& trimesh : trimeshes) {
-        vertex_count += trimesh->GetVertexCount();
-    }
-
-    for (const auto& object : objects) {
-        material_set.insert(object->material);
-    }
-
-    cout << triangle_count << " triangles" << endl;
-    cout << vertex_count << " vertices" << endl;
-    cout << material_set.size() << " materials" << endl;
-
-    CheckObjectsOrder();
-}
-
-void Scene::Load_TriMesh() {
-    cam_pos = {0, 1, 2};
-
-    // BVH INNER CUBE SEE THROUGH BUG
-//    cam_pos = {-2.90289f, -3.23417f, -6.13062f};
-    cam_pos = {-24, 24, -1.3f};
-    xz_angle = 1.6f;
-    yz_angle = 1.04f;
-
-    cam_pos = {1.56117, 1.30991, 1.9523};
-    xz_angle = -0.92f;
-    yz_angle = 0.24f;
-
-    Object3D* light = Object3D::CreateSphere(0, 15, 0, 2);
-    light->material = new Standard {0.4f, 0.1f, 0.1f};
-    light->setEmission(10);
-    objects.push_back(unique_ptr<Object3D>(light));
-
-    Object3D* light2 = Object3D::CreateSphere(7, 15, 0, 2);
-    light2->material = new Standard {0.4f, 0.1f, 0.1f};
-    light2->setEmission(10);
-    objects.push_back(unique_ptr<Object3D>(light2));
-
-    Object3D* light3 = Object3D::CreateSphere(-7, 15, 0, 2);
-    light3->material = new Standard {0.4f, 0.1f, 0.1f};
-    light3->setEmission(10);
-    objects.push_back(unique_ptr<Object3D>(light3));
-
-    Object3D* light4 = Object3D::CreateSphere(-14, 15, 0, 2);
-    light4->material = new Standard {0.4f, 0.1f, 0.1f};
-    light4->setEmission(10);
-    objects.push_back(unique_ptr<Object3D>(light4));
-
-    Object3D* light5 = Object3D::CreateSphere(14, 15, 0, 2);
-    light5->material = new Standard {0.4f, 0.1f, 0.1f};
-    light5->setEmission(10);
-    objects.push_back(unique_ptr<Object3D>(light5));
-
-//    Load_Floor();
-
-    std::string prefix = "../../models/";
-
+//    std::string file = "blender_tests/textured_square.obj";
 //    std::string file = "blender_tests/cube.obj";
 //    std::string file = "blender_tests/bvh_tests_2.obj";
 //    std::string file = "blender_tests/textured_square.obj";
@@ -120,7 +41,7 @@ void Scene::Load_TriMesh() {
 //    std::string file = "dragon/dragon.obj";
 //    std::string file = "blender_tests/bvh_sponza.obj";
 //    std::string file = "blender_tests/crytek_sponza_cl.obj";
-    std::string file = "crytek_sponza/crytek_vase_fixed.obj";
+//    std::string file = "crytek_sponza/crytek_vase_fixed.obj";
 //    std::string file = "marko_sponza/objects/sponza.lwo";
 //    std::string file = "sibenik_cathedral/sibenik.obj";
 //    std::string file = "blender_tests/sibenik_cl.obj";
@@ -131,15 +52,77 @@ void Scene::Load_TriMesh() {
 //    std::string file = "san-miguel 2016 version/sanMiguel/sanMiguel.obj";
 //    std::string file = "san_miguel/san-miguel.obj";
 //    std::string file = "Shanghai_city/shanghai_city_scene.obj";
-//    std::string file = "tibet_house/house.obj";
+    std::string file = "tibet_house/house.obj";
 //    std::string file = "ue4 stuff/grux.obj";
 //    std::string file = "Array_House_Example/Array House Example_obj.obj";
 
-    std::vector<std::unique_ptr<Object3D>> triangles = Object3D::CreateTriMesh(prefix + file);
+    if (model_file == "")
+        model_file = prefix + file;
 
-//    triangle->material = new Standard {0.4f, 0.1f, 0.1f};
+    LoadObjects(model_file);
+}
+
+void Scene::LoadObjects(const string& file) {
+
+//    Load_CornellBox();
+//    Load_SphereGrid(4);
+//    Load_MirrorRoom();
+//    Load_TexturedSphere();
+//    LoadSomeLights();
+    LoadModel(file);
+
+    bvh2 = new BVH2 {this};
+
+//    exit(0);
+
+//    bvh = BVH {this};
+
+    PostProcess();
+}
+
+
+void Scene::Clear() {
+    delete bvh2;
+    set<const TriMesh*> trimeshes = GetTriMeshes();
+    for (const auto& trimesh : trimeshes) {
+        delete trimesh;
+    }
+    objects.clear();
+    material_set.clear();
+}
+
+Scene::~Scene() {
+    delete bvh2;
+//    GetTriMeshes().clear();
+}
+
+void Scene::LoadModel(const string& file) {
+
+    std::vector<std::unique_ptr<Object3D>> triangles = Object3D::CreateTriMesh(file);
     std::move(triangles.begin(), triangles.end(), std::back_inserter(objects));
-//    objects.insert(objects.end(), triangles.begin(), triangles.end());
+}
+
+void Scene::LoadSomeLights() {
+    cam_pos = {0, 1, 2};
+
+    cam_pos = {1.56117, 1.30991, 1.9523};
+    xz_angle = -0.92f;
+    yz_angle = 0.24f;
+
+    std::array<Vec3, 5> pos = {
+           Vec3 {0, 15, 0},
+           Vec3 {7, 15, 0},
+           Vec3 {14, 15, 0},
+           Vec3 {-7, 15, 0},
+           Vec3 {-14, 15, 0},
+    };
+
+    for (size_t i = 0; i < pos.size(); ++i) {
+        Object3D* light = Object3D::CreateSphere(pos[i].x, pos[i].y, pos[i].z, 2);
+        light->material = new Standard {0.4f, 0.1f, 0.1f};
+        light->setEmission(10);
+        objects.push_back(unique_ptr<Object3D>(light));
+    }
 
 }
 
@@ -224,11 +207,11 @@ void Scene::Load_SphereGrid(int nb) {
 
     Object3D* test = Object3D::CreateSphere(0, 20, 0);
     test->material = objects[0]->material;
-    objects.push_back(unique_ptr<Object3D>(test));
+//    objects.push_back(unique_ptr<Object3D>(test));
 
     Object3D* egzeg = Object3D::CreateSphere(20, 0, 0);
     egzeg->material = new Standard(0, 0.5, 0.5);
-    objects.push_back(unique_ptr<Object3D>(egzeg));
+//    objects.push_back(unique_ptr<Object3D>(egzeg));
 }
 
 void Scene::Load_MirrorRoom() {
@@ -306,23 +289,23 @@ void Scene::Load_TexturedSphere() {
 //    std::string albedo_file = "Dark Stone Tiles/Dark_Stone_Tiles_Normal.jpg";
 //    std::string albedo_file = "Dark Stone Tiles/Dark_Stone_Tiles_Base_Color.jpg";
 //    std::string albedo_file = rel_prefix + "uv_checker.png";
-    shared_ptr<ITexture> albedo_tex = std::make_shared<TextureUbyte>(prefix + albedo_file);
-//    shared_ptr<ITexture> albedo_tex = std::make_shared<ValueTex3f>(0.7f);
+    shared_ptr<Texture> albedo_tex = std::make_shared<TextureUbyte>(prefix + albedo_file);
+//    shared_ptr<Texture> albedo_tex = std::make_shared<ValueTex3f>(0.7f);
 
 //    std::string roughness_file = "T_Brick_Beige_R.jpg";
     std::string roughness_file = "Dark Stone Tiles/Dark_Stone_Tiles_Roughness.jpg";
 //    std::string roughness_file = "../../imagesold/T_Brick_Beige_R_boosted_higher_freq_blured.jpg";
-    shared_ptr<ITexture> roughness_tex = std::make_shared<TextureUbyte>(prefix + roughness_file);
-//    shared_ptr<ITexture> roughness_tex = std::make_shared<ValueTex1f>(0.2f);
+    shared_ptr<Texture> roughness_tex = std::make_shared<TextureUbyte>(prefix + roughness_file);
+//    shared_ptr<Texture> roughness_tex = std::make_shared<ValueTex1f>(0.2f);
 
 //    std::string reflectance_file = "../../imagesold/127_pixel.bmp";
     std::string reflectance_file = "Dark Stone Tiles/Dark_Stone_Tiles_Metallic.jpg";
-    shared_ptr<ITexture> reflectance_tex = std::make_shared<TextureUbyte>(prefix + reflectance_file);
-//    shared_ptr<ITexture> reflectance_tex = std::make_shared<ValueTex3f>(0.01f);
+    shared_ptr<Texture> reflectance_tex = std::make_shared<TextureUbyte>(prefix + reflectance_file);
+//    shared_ptr<Texture> reflectance_tex = std::make_shared<ValueTex3f>(0.01f);
 
 //    std::string normal_file = "normal_up_1k_2x.jpg";
     std::string normal_file = "Dark Stone Tiles/Dark_Stone_Tiles_Normal.jpg";
-    std::shared_ptr<ITexture> normal_tex = std::make_shared<TextureUbyte>(prefix + normal_file, false);
+    std::shared_ptr<Texture> normal_tex = std::make_shared<TextureUbyte>(prefix + normal_file, false);
 
     //TODO: Ideal api_low_poly
 
@@ -440,5 +423,36 @@ void Scene::CheckObjectsOrder() {
         }
     }
 
+}
+
+void Scene::PostProcess() {
+
+    Vec3 min = bvh2->GetRoot()->bbox.min;
+    Vec3 max = bvh2->GetRoot()->bbox.max;
+    debug_scale = std::sqrt((max * max).max() + (min * min).max());
+    debug_scale = ((max - min) / 2.f).max();
+    cout << "BVH scale " << debug_scale << endl;
+
+    triangle_count = 0;
+    for (const auto& object : objects) {
+        if (typeid(*object->shape) == typeid(Triangle))
+            triangle_count++;
+    }
+
+    vertex_count = 0;
+    const auto& trimeshes = GetTriMeshes();
+    for (const auto& trimesh : trimeshes) {
+        vertex_count += trimesh->GetVertexCount();
+    }
+
+    for (const auto& object : objects) {
+        material_set.insert(object->material);
+    }
+
+    cout << triangle_count << " triangles" << endl;
+    cout << vertex_count << " vertices" << endl;
+    cout << material_set.size() << " materials" << endl;
+
+    CheckObjectsOrder();
 }
 

@@ -157,6 +157,10 @@ void OpenCLRenderer::Update() {
         reload_kernel = false;
     }
 
+    if (scene->model_has_changed) {
+        UpdateSceneBuffers();
+    }
+
     // TODO: Send an SDL_Event containing the changed object to avoid reloading the full arrays ?
     if (scene->material_has_changed) {
         UpdateMaterialBuffer();
@@ -166,7 +170,7 @@ void OpenCLRenderer::Update() {
         UpdateObjectBuffer();
     }
 
-    if (scene->env_map_has_changed) {
+    if (scene->envmap_has_changed) {
         UpdateEnvMap();
     }
     // Always updated because the frame number increments every frame

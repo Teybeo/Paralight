@@ -18,18 +18,9 @@ private:
 
     int triangle_count = 0;
     int vertex_count = 0;
-
-    void Load_CornellBox();
-    void Load_SphereGrid(int nb);
-    void Load_Floor();
-    void Load_MirrorRoom();
-    void Load_TexturedSphere();
-    void Load_TriMesh();
-
-    void CheckObjectsOrder();
+    std::string prefix = "../../models/";
 
 public:
-    Scene();
 
     BVH2* bvh2;
     BVH bvh;
@@ -39,18 +30,25 @@ public:
 
     float yz_angle = 0;
     float xz_angle = 0;
-    Vec3 cam_pos {0, 0, 0};
+    Vec3 cam_pos {0, 0, 10};
     float debug_scale = 1;
     bool material_has_changed = false;
-    bool env_map_has_changed = false;
+    bool envmap_has_changed = false;
     bool emission_has_changed = false;
+    bool model_has_changed = false;
+
+    Scene(std::string file = "");
+    ~Scene();
+
+    void LoadObjects(const std::string& file);
+//    void Clear();
 
     BoundingBox ComputeBBox() const;
 
     std::set<const TriMesh*> GetTriMeshes() const;
 
     bool HasChanged() const {
-        return material_has_changed || env_map_has_changed || emission_has_changed;
+        return material_has_changed || envmap_has_changed || emission_has_changed || model_has_changed;
     }
 
     int GetTriangleCount() const {
@@ -65,6 +63,20 @@ public:
         return material_set;
     }
 
+    void Clear();
+
+private:
+    void Load_CornellBox();
+    void Load_SphereGrid(int nb);
+    void Load_Floor();
+    void Load_MirrorRoom();
+    void Load_TexturedSphere();
+    void LoadSomeLights();
+    void LoadModel(const std::string& file);
+
+    void CheckObjectsOrder();
+
+    void PostProcess();
 };
 
 #endif //PATHTRACER_SCENE_H
