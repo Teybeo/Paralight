@@ -23,6 +23,7 @@ public:
 
     Intersectable* shape = nullptr;
     Material* material = nullptr;
+    //TODO: Remove these
     Brdf* brdf;
     Brdf* spec;
 

@@ -29,7 +29,7 @@ public:
         std::cout << "Material copy ctor" << std::endl;
     }
     virtual ~Material() {
-        std::cout << "Material dtor" << std::endl;
+//        std::cout << "Material dtor" << std::endl;
     };
 
     virtual BrdfStack* CreateBSDF(const SurfaceData& surface_data, Vec3& shading_normal) {
@@ -125,7 +125,7 @@ public:
         std::cout << "Standard Material copy ctor";
     }
     ~Standard() {
-        std::cout << "Standard Material dtor" << std::endl;
+//        std::cout << "Standard Material dtor" << std::endl;
     }
 
     BrdfStack* CreateBSDF(const SurfaceData& surface_data, Vec3& shading_normal) {

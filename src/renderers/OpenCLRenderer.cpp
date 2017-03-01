@@ -104,8 +104,8 @@ void OpenCLRenderer::Draw() {
     size_t width = (size_t) surface->w;
     size_t height = (size_t) surface->h;
 
-//    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height));
-    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height), cl::NDRange(8, 4));
+    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height));
+//    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height), cl::NDRange(8, 4));
 //    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height), cl::NDRange(8, 8));
     queue.enqueueReadBuffer(texture, CL_TRUE, 0, sizeof(Uint32) * width * height, pixels);
 }
@@ -221,9 +221,13 @@ void OpenCLRenderer::CreateRenderKernel(cl::Program& prog) {
 
 void OpenCLRenderer::UpdateRenderKernel() {
 
-    program.Build(context, device);
+    try {
+        program.Build(context, device);
+        CreateRenderKernel(program.prog);
+    } catch (std::bad_exception& e) {
 
-    CreateRenderKernel(program.prog);
+    }
+
 }
 
 void OpenCLRenderer::SetKernelArguments(cl::Kernel& kernel) const {
@@ -421,8 +425,8 @@ cl::Buffer OpenCLRenderer::CreateBuffer(vector<T> vec, cl_mem_flags flags) {
 
     size_t size_bytes = vec.size() * sizeof(T);
 
-    if (vec.size() >= max_size) {
-        cerr << "Buffer size exceeds max mem allocation size for this device: " << vec.size() << " >= " << max_size << endl;
+    if (size_bytes >= max_size) {
+        cerr << "Buffer size exceeds max mem allocation size for this device: " << size_bytes << " >= " << max_size << endl;
     }
 
     cout << size_bytes / 1024 << " Ko written to CL device for " << vec.size() << " " << GetTypename<T>() << endl;

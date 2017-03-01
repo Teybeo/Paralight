@@ -19,8 +19,8 @@ typedef unsigned char RGBE[4];
 #define B			2
 #define E			3
 
-#define  MINELEN	8				// minimum scanline length for encoding
-#define  MAXELEN	0x7fff			// maximum scanline length for encoding
+#define  MIN_ENCODING_LENGTH	8				// minimum scanline length for encoding
+#define  MAX_ENCODING_LENGTH	0x7fff			// maximum scanline length for encoding
 
 static void workOnRGBE(RGBE *scan, int len, float *cols);
 static bool decrunch(RGBE *scanline, int len, FILE *file);
@@ -37,7 +37,8 @@ bool HDRLoader::load(const char *fileName, HDRLoaderResult &res)
 		return false;
 
 	fread(str, 10, 1, file);
-	if (memcmp(str, "#?RADIANCE", 10)) {
+	if (memcmp(str, "#?RADIANCE", 10) && memcmp(str, "#?RGBE", 6)) {
+        printf("Not radiance");
 		fclose(file);
 		return false;
 	}
@@ -65,30 +66,27 @@ bool HDRLoader::load(const char *fileName, HDRLoaderResult &res)
 			break;
 	}
 
-	int w, h;
-	if (!sscanf(reso, "-Y %i +X %i", &h, &w)) {
+	int width, height;
+	if (!sscanf(reso, "-Y %i +X %i", &height, &width)) {
 		fclose(file);
 		return false;
 	}
 
-	res.width = w;
-	res.height = h;
-
-	float *cols = new float[w * h * 3];
+	float *cols = new float[width * height * 3];
 	res.cols = cols;
+	res.width = width;
+	res.height = height;
 
-	RGBE *scanline = new RGBE[w];
-	if (!scanline) {
-		fclose(file);
-		return false;
-	}
-
+	RGBE *scanline = new RGBE[width];
+    
 	// convert image
-	for (int y = h - 1; y >= 0; y--) {
-		if (decrunch(scanline, w, file) == false)
+    for (int y = height - 1; y >= 0; y--) {
+        
+		if (decrunch(scanline, width, file) == false)
 			break;
-		workOnRGBE(scanline, w, cols);
-		cols += w * 3;
+        
+		workOnRGBE(scanline, width, cols);
+		cols += width * 3;
 	}
 
 	delete [] scanline;
@@ -120,7 +118,7 @@ bool decrunch(RGBE *scanline, int len, FILE *file)
 {
 	int  i, j;
 					
-	if (len < MINELEN || len > MAXELEN)
+	if (len < MIN_ENCODING_LENGTH || len > MAX_ENCODING_LENGTH)
 		return oldDecrunch(scanline, len, file);
 
 	i = fgetc(file);
@@ -140,7 +138,7 @@ bool decrunch(RGBE *scanline, int len, FILE *file)
 	}
 
 	// read each component
-	for (i = 0; i < 4; i++) {
+    for (i = 0; i < 4; i++) {
 	    for (j = 0; j < len; ) {
 			unsigned char code = fgetc(file);
 			if (code > 128) { // run

@@ -6,17 +6,22 @@ int2 NormalizedToImageBounds(float2 uv, int width, int height);
 
 float3 Sample_Buffer(const global char* image_array, const global TextureInfo* info_array, int id, float2 uv) {
 
+    uchar3 pixel;
+
     const global TextureInfo* info = info_array + id;
 
     uv -= floor(uv);
 
     int2 xy = NormalizedToImageBounds(uv, info->width, info->height);
 
-    int pixel_offset = info->height * xy.y + xy.x;
+    int pixel_offset = (info->width * xy.y + xy.x);
 
-    const global uchar4* texture = (const global uchar4*) (image_array + info->byte_offset); // * 4 = Get Psyched Novidia
+    const global uchar* texture = (const global uchar*) (image_array + info->byte_offset); // * 4 = Get Psyched Novidia
 
-    uchar4 pixel = texture[pixel_offset];
+    const global uchar* pixel_byte_ptr = (const global uchar*) (texture + pixel_offset * 3); // RGB
+//    const global uchar* pixel_byte_ptr = (const global uchar*) (texture + pixel_offset * 4); // RGBA
+
+    pixel = (uchar3)(pixel_byte_ptr[0], pixel_byte_ptr[1], pixel_byte_ptr[2]);
 
     return (float3)(pixel.x, pixel.y, pixel.z) / 255.f;
 }

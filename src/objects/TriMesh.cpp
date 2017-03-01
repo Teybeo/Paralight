@@ -16,14 +16,10 @@ using std::unique_ptr;
 std::atomic_int TriMesh::triangle_test_count;
 std::atomic_int TriMesh::triangle_hit_count;
 
+float FindSphereBoundRadius(const vector<Vec3>& pos_array);
 
 // Assimp separate the indices of each triangle in their own Face structure
 // We flatten it to an array of unsigned int for OpenGL consumption
-void FlattenIndexArray(const aiMesh* ai_mesh, vector<unsigned int>& index_array);
-
-
-float FindSphereBoundRadius(const vector<Vec3>& pos_array);
-
 vector<unsigned int> CreateFlattenIndexArray(const aiFace* face_array, const unsigned int face_count) ;
 
 TriMesh::TriMesh(const string& filename, string directory) {
@@ -109,7 +105,7 @@ void TriMesh::ImportAssimpMesh(const aiScene* ai_scene, std::string directory) {
             tangent_array.insert(tangent_array.end(), tangents, tangents + ai_mesh->mNumVertices);
             bitangent_array.insert(bitangent_array.end(), bitangents, bitangents + ai_mesh->mNumVertices);
         }
-        
+
         vector<unsigned int> mesh_index_array = CreateFlattenIndexArray(ai_mesh->mFaces, ai_mesh->mNumFaces);
 //        std::copy_n(index_array.begin(), mesh_index_array.size(), mesh_index_array.begin() + vertex_total);
 
@@ -134,7 +130,6 @@ void TriMesh::ImportAssimpMesh(const aiScene* ai_scene, std::string directory) {
 
     materials = vector<unique_ptr<Material>>(ai_scene->mNumMaterials);
 
-//    #pragma omp parallel for ordered
     for (size_t i = 0; i < materials.size(); ++i) {
         materials[i] = unique_ptr<Material>(new Standard(ai_scene->mMaterials[i], directory));
     }

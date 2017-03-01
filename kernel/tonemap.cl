@@ -12,7 +12,7 @@ float3 Yxy2RGB(float3 Yxy);
 float3 mat3_mul_float3(mat3 mat, float3 vec);
 
 #define EXPOSURE 1.0f
-#define WHITEPOINT 1.0f
+#define WHITEPOINT 4.0f
 
 void tonemap(float3* color) {
 

@@ -11,7 +11,8 @@ Ray PrimaryRay(float x, float y, int width, int height, constant Options* option
 float3 Trace(Ray ray, global Node2* bvh_root, global Object3D* objects, VERTEX_DATA_ARGS, global Brdf* brdfs, constant Options* options, read_only image2d_t env_map, global char* texture_array, global TextureInfo* info_array, RNG_SEED_ARGS);
 int FindNearestObject(const Ray ray, global Object3D* objects, VERTEX_GEOM_DATA_ARGS, float* nearest_dist, constant Options* options);
 
-kernel __attribute__((reqd_work_group_size(8, 4, 1)))
+//kernel __attribute__((reqd_work_group_size(8, 4, 1)))
+kernel __attribute__((work_group_size_hint(8, 4, 1)))
 //kernel __attribute__((work_group_size_hint(8, 8, 1)))
 //kernel
 void render(global uchar4* framebuffer, global float4* accum_buffer, global Node2* bvh_root, global Object3D* objects, VERTEX_DATA_ARGS, global Brdf* brdfs, constant Options* options, read_only image2d_t env_map, global char* texture_array, global TextureInfo* info_array) {

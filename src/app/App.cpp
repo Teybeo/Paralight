@@ -10,19 +10,6 @@
 #include <iostream>
 #include <chrono>
 
-/// Bilinear texture sampling
-
-//TODO: [Opti] Replace Lambertian+Cook Torance with Ashikhmin to reduce register usage (around 70-80) which atm limits Kernel occupancy
-//TODO: [Feature] Set Orbit mode center to center of scene bbox
-//TODO: Environment map importance sampling
-//TODO: [Optim] Split the megakernel
-//TODO: [Feature] Rotation slider to rotate the env-map
-//TODO: [Fix] The u coordinate when sampling the env-map must be inverted because we are sampling _inside_ of the sphere
-
-// TODO: Bring C++ Renderer to parity with OpenCL Renderer:
-// TODO: Tonemapping
-// TODO: Jittered primary rays
-
 App::App(std::string title) {
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -44,8 +31,8 @@ App::App(std::string title) {
     camera_controls.SetPosition(scene.cam_pos);
     camera_controls.SetRotation(scene.yz_angle, scene.xz_angle);
 
-    renderer = new CppRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
-//    renderer = new OpenCLRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
+//    renderer = new CppRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
+    renderer = new OpenCLRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
 
     overlay = new GUI {&options, gui_window.getSDL_window(), renderer, &scene};
 

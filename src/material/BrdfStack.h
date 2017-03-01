@@ -21,7 +21,6 @@ public:
     virtual ~BrdfStack() {
         for (int i = 0; i < brdf_count; ++i)
             delete brdf[i];
-//        std::cout << "BrdfStack dtor called" << std::endl;
     }
 
     virtual BrdfStack* copy() = 0;
