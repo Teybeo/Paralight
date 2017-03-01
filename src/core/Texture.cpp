@@ -195,6 +195,7 @@ void ImageTexture<float>::ConvertToLinear() {
 
 template<>
 void ImageTexture<uint8_t>::ConvertToLinear() {
+    #pragma omp parallel for
     for (size_t i = 0; i < channel_count * width * height; ++i) {
         data[i] = static_cast<uint8_t>(std::pow(data[i] / 255.f, 2.2f) * 255);
     }
