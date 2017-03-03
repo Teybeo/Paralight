@@ -120,7 +120,7 @@ void GUI::showRendererSettings() {
             event.user.code = BaseRenderer::EVENT_CL_RENDERER;
             SDL_PushEvent(&event);
         }
-        if (is_opencl == false) {
+        if (is_opencl == true) {
             showOpenCLSettings();
         }
     }
