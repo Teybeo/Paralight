@@ -29,33 +29,22 @@ float3 Sample_Buffer(const global char* image_array, const global TextureInfo* i
 /*
  * direction must be normalized
  */
-float3 Sample_Spheremap(image2d_t image, float3 direction) {
-
-    float2 uv = SphericalToCartesian(direction);
-
-    int width = get_image_width(image);
-    int height = get_image_height(image);
-
-    uv.x = -uv.x; // The u coordinate is reversed because we are sampling the outside of a sphere
-
-    int2 xy = NormalizedToImageBounds(uv, width, height);
-
-    return read_imagef(image, xy).xyz;
-}
-
-/*
- * direction must be normalize
- */
 float3 Sample_Envmap(image2d_t image, float3 direction) {
 
     float2 uv = SphericalToCartesian(direction);
 
-    int width = get_image_width(image);
-    int height = get_image_height(image);
+    return Sample(image, uv.x, uv.y);
+}
 
-    int2 xy = NormalizedToImageBounds(uv, width, height);
+/*
+ * direction must be normalized
+ */
+float3 Sample_Spheremap(image2d_t image, float3 direction) {
 
-    return read_imagef(image, xy).xyz;
+    float2 uv = SphericalToCartesian(direction);
+
+    // The u coordinate is reversed because we are sampling the outside of a sphere
+    return Sample(image, -uv.x, uv.y);
 }
 
 /**

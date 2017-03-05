@@ -15,6 +15,8 @@ using std::endl;
 template class ImageTexture<float>;
 template class ImageTexture<uint8_t>;
 
+Vec3 SphericalToCartesian(const Vec3& direction) ;
+
 template <typename T>
 ImageTexture<T>::ImageTexture(const std::string& path, bool store_in_linear) : path(path) {
 
@@ -123,20 +125,20 @@ Vec3 ImageTexture<T>::Evaluate(const Vec3& uv) {
  * direction must be normalized
  */
 template <typename T>
-Vec3 ImageTexture<T>::Sample_Spheremap(const Vec3& direction) {
+Vec3 ImageTexture<T>::SampleEnvmap(const Vec3& direction) {
 
-#ifdef USE_TRIGO_LOOKUP
-    float polar = ACOS_LOOKUP(direction.y);      // acos() => [0, PI]
-#else
-    float polar = acosf(direction.y);            // acos() => [0, PI]
-#endif
+    Vec3 uv = SphericalToCartesian(direction);
 
-    float azimuth = atan2f(direction.x, direction.z);// atan() => [-PI, PI]
+    return Sample(uv.x, uv.y);
+}
 
-    float u = (azimuth + M_PI_F) / (2 * M_PI_F); // [-PI, PI] => [0, 1]
-    float v = (polar / M_PI_F);                  // [0, PI]   => [0, 1]
+template <typename T>
+Vec3 ImageTexture<T>::SampleSpheremap(const Vec3& direction) {
 
-    return Sample(u, v);
+    Vec3 uv = SphericalToCartesian(direction);
+
+    // The u coordinate is reversed because we are sampling the outside of a sphere
+    return Sample(-uv.x, uv.y);
 }
 
 /**
@@ -154,23 +156,15 @@ inline Vec3 ImageTexture<T>::Sample(float u, float v) {
                  data[offset + 1],
                  data[offset + 2]);
 }
+
 template <>
 inline Vec3 ImageTexture<uint8_t>::Sample(float u, float v) {
 
-    //TODO: Need better handling of out of range coordinates
-//    u = std::min(1.f, std::max(0.f, u));
-//    v = std::min(1.f, std::max(0.f, v));
+    u -= std::floor(u);
+    v -= std::floor(v);
 
     int x = (int) round(u * (width - 1));
     int y = (int) round(v * (height - 1));
-
-    x = x % width;
-    y = y % height;
-
-    x = (x >= 0) ? x : width + x;
-    y = (y >= 0) ? y : height + y;
-
-//    if (x > w)
 
     int offset = channel_count * (y * width + x);
 
@@ -179,27 +173,41 @@ inline Vec3 ImageTexture<uint8_t>::Sample(float u, float v) {
                  data[offset + 2] / 255.f);
 }
 
+Vec3 SphericalToCartesian(const Vec3& direction) {
+
+#ifdef USE_TRIGO_LOOKUP
+    float polar = ACOS_LOOKUP(direction.y);      // acos() => [0, PI]
+#else
+    float polar = acosf(direction.y);            // acos() => [0, PI]
+#endif
+
+    float azimuth = atan2f(direction.x, direction.z);// atan() => [-PI, PI]
+
+    float u = (azimuth + M_PI_F) / (2 * M_PI_F); // [-PI, PI] => [0, 1]
+    float v = (polar / M_PI_F);                  // [0, PI]   => [0, 1]
+
+    return {u, v, 0};
+}
+
 template <typename T>
 void ImageTexture<T>::ConvertToLinear() {
     cout << "ConvertToLinear generic template" << endl;
 }
 
-template <typename T>
-string ImageTexture<T>::GetName() {
-    return path;
+template<>
+void ImageTexture<uint8_t>::ConvertToLinear() {
+#pragma omp parallel for
+    for (size_t i = 0; i < channel_count * width * height; ++i) {
+        data[i] = static_cast<uint8_t>(std::pow(data[i] / 255.f, 2.2f) * 255);
+    }
 }
 
 template<>
 void ImageTexture<float>::ConvertToLinear() {
 }
 
-template<>
-void ImageTexture<uint8_t>::ConvertToLinear() {
-    #pragma omp parallel for
-    for (size_t i = 0; i < channel_count * width * height; ++i) {
-        data[i] = static_cast<uint8_t>(std::pow(data[i] / 255.f, 2.2f) * 255);
-    }
+template <typename T>
+string ImageTexture<T>::GetName() {
+    return path;
 }
-
-
 

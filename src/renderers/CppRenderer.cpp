@@ -117,8 +117,7 @@ Vec3 CppRenderer::Raytrace(Ray ray, bool debug_pixel) {
             if (options->use_distant_env_lighting) {
 //                return material * Vec3{0.18, 0.18, 0.18};
 //                return material * options->background_color;
-                return material * scene->env_map->Sample_Spheremap(ray.direction);
-                return material * scene->env_map->Sample_Spheremap(Vec3{-ray.direction.x, ray.direction.y, ray.direction.z});
+                return material * scene->env_map->SampleEnvmap(ray.direction);
             }
             else
                 return {0, 0, 0};
@@ -198,7 +197,7 @@ Vec3 CppRenderer::Raytrace_Recursive(Ray ray, const int bounce_depth) {
         if (options->use_distant_env_lighting)
 //            return {0.18, 0.18, 0.36};
 //            return env_map->Sample_Cubemap(ray.direction);
-            return scene->env_map->Sample_Spheremap(ray.direction);
+            return scene->env_map->SampleEnvmap(ray.direction);
         else
             return {0, 0, 0};
     }

@@ -42,7 +42,8 @@ public:
 
     Vec3 Evaluate(const Vec3& uv) override;
 
-    Vec3 Sample_Spheremap(const Vec3& direction);
+    Vec3 SampleEnvmap(const Vec3& direction);
+    Vec3 SampleSpheremap(const Vec3& direction);
 
     size_t GetSize() const override ;
 
@@ -55,6 +56,7 @@ private:
     void Load_HDR();
 
     void ConvertToLinear();
+
 };
 
 template <typename T>
