@@ -154,7 +154,7 @@ public:
     Vec3 Sample_FresnelBeckmann(Vec3 reflectance, float roughness, const Vec3& outgoing_dir, const Vec3& normal) {
 
         Vec3 micro_normal = Random::GetInstance().BeckmannSample(roughness);
-        micro_normal = micro_normal.WorldToTangent(normal);
+        micro_normal = micro_normal.ToTangentSpace(normal);
         Vec3 specular_ray = micro_normal.reflect(outgoing_dir);
 
         Vec3 half_vector = (specular_ray + outgoing_dir).normalize();

@@ -28,7 +28,8 @@ float3 Sample_Mirror_f(float3 reflectance, float3 outgoing_dir, float3* incoming
 float3 Sample_Lambertian_f(float3 albedo, float3 outgoing_dir, float3* incoming_dir, float* pdf, float3 normal, RNG_SEED_ARGS);
 //float3 Sample_Lambertian_f(Brdf brdf, float3 outgoing_dir, float3* incoming_dir, float* pdf, float3 normal, uint* seed_x, uint* seed_y);
 float3 Sample_Microfacet_f(float roughness, float3 reflection, float3 outgoing_dir, float3* incoming_dir, float* pdf, float3 normal, RNG_SEED_ARGS);
-float3 GetRandomHemisphereDirection(RNG_SEED_ARGS);
+float3 GetRandomHemisphereDirectionCosine(RNG_SEED_ARGS);
+float3 GetRandomHemisphereDirectionUniform(RNG_SEED_ARGS);
 float3 BeckmannSample(float roughness, RNG_SEED_ARGS);
 float Beckmann(const float3 normal, const float3 half_vector, const float roughness);
 float GeometryCookTorrance(const float3 normal, const float3 outgoing_dir, const float3 incoming_dir);

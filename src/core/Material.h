@@ -118,7 +118,7 @@ public:
         ImportValue(albedo_map, "diffuse", 0);
         ImportValue(reflectance_map, "specular", 0.04f);
 
-        roughness_map = std::make_shared<ValueTex1f>(0.3f);
+        roughness_map = std::make_shared<ValueTex1f>(0.1f);
     }
 
     Standard(const Standard& other) : albedo_map{other.albedo_map}, roughness_map{other.roughness_map}, reflectance_map{other.reflectance_map} {

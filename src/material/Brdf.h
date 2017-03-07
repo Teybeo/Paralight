@@ -48,24 +48,27 @@ public:
 
     virtual Vec3 Sample_f(Vec3 outgoing_dir, Vec3& incoming_dir, float& pdf, Vec3 normal) = 0;
 };
-
 class Lambertian : public Brdf {
 
 private:
     Vec3 albedo;
 
 public:
-    Lambertian(const Vec3& albdeo) : Brdf{LAMBERTIAN},
-                                     albedo(albdeo) { }
+
+    Lambertian(const Vec3& albdeo) : Brdf{LAMBERTIAN}, albedo(albdeo) { }
 
     Vec3 Sample_f(Vec3 outgoing_dir, Vec3& incoming_dir, float& pdf, Vec3 normal) override {
 
-        // Uniform Hemisphere sampling PDF = 1 / (2 * Pi)
-        incoming_dir = Random::GetInstance().GetWorldRandomHemisphereDirection(normal);
-        pdf = 1 / (2 * M_PI_F);
+        // Cosine Hemisphere sampling, PDF = cos(theta) / Pi
+        incoming_dir = Random::GetInstance().GetWorldRandomHemishpereDirectionCosine(normal);
 
-        return albedo * M_INV_PI;
+        float cos_theta = incoming_dir.dot(normal);
+
+        pdf = cos_theta / M_PI_F;
+
+        return albedo / M_PI_F;
     }
+
     void setAlbedo(const Vec3& albedo) {
         this->albedo = albedo;
     }
@@ -92,7 +95,7 @@ public:
     Vec3 Sample_f(Vec3 outgoing_dir, Vec3& incoming_dir, float& pdf, Vec3 normal) override {
 
         Vec3 micro_normal = Random::GetInstance().BeckmannSample(roughness); // Ok
-        micro_normal = micro_normal.WorldToTangent(normal); // OK
+        micro_normal = micro_normal.ToTangentSpace(normal); // OK
 
         incoming_dir = micro_normal.reflect(outgoing_dir); // OK
 

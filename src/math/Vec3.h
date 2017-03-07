@@ -182,7 +182,7 @@ public:
     /**
      * Treat this vector as the normal and create associated bitangent and tangent vectors
      */
-    void createBitangentAndTangent(Vec3& b, Vec3& t) {
+    void createBitangentAndTangent(Vec3& b, Vec3& t) const {
         if (std::fabs(x) > std::fabs(y))
             t = Vec3(z, 0, -x) / sqrtf(x * x + z * z);
         else
@@ -194,9 +194,9 @@ public:
     }
 
     /**
-     * Transform this vector from world space to the tangent space defined by a normal
+     * Transform this vector to the tangent space defined by a normal
      */
-    Vec3 WorldToTangent(Vec3 normal) {
+    Vec3 ToTangentSpace(const Vec3& normal) {
 
         Vec3 b, t;
         normal.createBitangentAndTangent(b, t);

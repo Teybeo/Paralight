@@ -17,9 +17,10 @@ float3 Sample_Mirror_f(float3 reflectance, float3 outgoing_dir, float3* incoming
 
 float3 Sample_Lambertian_f(float3 albedo, float3 outgoing_dir, float3* incoming_dir, float* pdf, float3 normal, RNG_SEED_ARGS) {
 
-//    // Uniform Hemisphere sampling PDF = 1 / (2 * Pi)
-    *incoming_dir = WorldToTangent(normal, GetRandomHemisphereDirection(RNG_SEED));
-    *pdf = 1 / (2 * M_PI_F);
+    // Cosine Hemisphere sampling, PDF = cos(theta) / Pi
+    *incoming_dir = WorldToTangent(normal, GetRandomHemisphereDirectionCosine(RNG_SEED));
+    float cos_theta = dot(*incoming_dir, normal);
+    *pdf = cos_theta / M_PI_F;
 
     return albedo / M_PI_F;
 }
@@ -131,7 +132,7 @@ float GeometryCookTorrance(const float3 normal, const float3 outgoing_dir, const
  * y = cos(Theta)
  * z = sin(Theta) * sin(Phi)
  */
-float3 GetRandomHemisphereDirection(RNG_SEED_ARGS) {
+float3 GetRandomHemisphereDirectionUniform(RNG_SEED_ARGS) {
 
     // cos(r1) == r1
     float cos_theta = getRandom(RNG_SEED);
@@ -147,7 +148,22 @@ float3 GetRandomHemisphereDirection(RNG_SEED_ARGS) {
     float sin_theta = sqrt(1.f - (cos_theta * cos_theta));
     return normalize((float3){cos_phi * sin_theta, cos_theta, sin_phi * sin_theta});
 }
+/**
+ * Cosine sampling over Hemisphere
+ */
+float3 GetRandomHemisphereDirectionCosine(RNG_SEED_ARGS) {
 
+    float u1 = getRandom(RNG_SEED);
+    float u2 = getRandom(RNG_SEED);
+
+    const float r = sqrt(u1);
+    const float theta = 2.f * M_PI_F * u2;
+
+    const float x = r * cos(theta);
+    const float z = r * sin(theta);
+
+    return (float3)(x, sqrt(max(0.f, 1.f - u1)), z);
+}
 // Schlick approximation
 /**
  * if dot < 0, (1 - dot) > 1, fresnel > 1

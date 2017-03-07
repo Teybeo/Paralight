@@ -1,35 +1,37 @@
-#include <iostream>
 #include "Random.h"
 
+#include <iostream>
+
 Random Random::instance = Random();
+
+Vec3 GetRandomHemisphereDirectionUniform(float cos_theta, float phi);
+Vec3 GetRandomHemisphereDirectionCosineSampling(float u1, float u2);
 
 float Random::GetUniformRandom() {
     return distribution(generator);
 }
 
-Vec3 Random::GetWorldRandomHemisphereDirection(Vec3 normal) {
+Vec3 Random::GetWorldRandomHemishpereDirectionUniform(Vec3 normal) {
+    float r1 = GetUniformRandom();
+    float r2 = GetUniformRandom();
 
-    Vec3 b, t;
-    normal.createBitangentAndTangent(b, t);
-
-    float r1 = distribution(generator);
-    float r2 = distribution(generator);
-
-    Vec3 sample = GetRandomHemisphereDirection(r1, r2);
-    Vec3 sample_dir(
-            sample.x * b.x + sample.y * normal.x + sample.z * t.x,
-            sample.x * b.y + sample.y * normal.y + sample.z * t.y,
-            sample.x * b.z + sample.y * normal.z + sample.z * t.z);
-    return sample_dir;
+    return GetRandomHemisphereDirectionUniform(r1, r2).ToTangentSpace(normal);
 }
 
-/*
+Vec3 Random::GetWorldRandomHemishpereDirectionCosine(Vec3 normal) {
+    float r1 = GetUniformRandom();
+    float r2 = GetUniformRandom();
+
+    return GetRandomHemisphereDirectionCosineSampling(r1, r2).ToTangentSpace(normal);
+}
+
+/**
  * Uniform sampling over Hemisphere
  * x = sin(Theta) * cos(Phi)
  * y = cos(Theta)
  * z = sin(Theta) * sin(Phi)
  */
-Vec3 Random::GetRandomHemisphereDirection(float cos_theta, float phi) const {
+Vec3 GetRandomHemisphereDirectionUniform(float cos_theta, float phi) {
 
     // Compute sin(theta) from cos(theta) using
     // cos(x)² + sin((x)² = 1
@@ -56,30 +58,18 @@ Vec3 Random::GetRandomHemisphereDirection(float cos_theta, float phi) const {
                 sin_theta * sin_phi);
 }
 
-/*
- * Uniform sampling over Hemisphere
- * x = sin(Theta) * cos(Phi)
- * y = cos(Theta)
- * z = sin(Theta) * sin(Phi)
+/**
+ * Cosine sampling over Hemisphere
  */
 Vec3 GetRandomHemisphereDirectionCosineSampling(float u1, float u2) {
 
-    // Compute sin(theta) from cos(theta) using
-    // cos(x)² + sin((x)² = 1
-
-    const float r = sqrtf(u1);
+    const float r = std::sqrt(u1);
     const float theta = 2 * M_PI_F * u2;
 
-    const float x = r * cosf(theta);
-    const float z = r * sinf(theta);
+    const float x = r * std::cos(theta);
+    const float z = r * std::sin(theta);
 
-    return Vec3(x, sqrtf(1.f - u1), z);
-
-//    float sin_theta = sqrtf(1 - cos_theta * cos_theta);
-//    float x = sin_theta * cos_lut[(int)(COS_LUT_LENGTH * phi)];
-//    float z = cos_theta * sin_lut[(int)(COS_LUT_LENGTH * phi)];
-//    return Vec3(x, cos_theta, z);
-
+    return Vec3(x, std::sqrt(std::max(0.f, 1.f - u1)), z);
 }
 
 

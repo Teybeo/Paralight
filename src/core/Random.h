@@ -5,6 +5,8 @@
 #include "math/Vec3.h"
 #include "math/TrigoLut.h"
 
+//#define COSINE_SAMPLING
+
 class Random {
 
     std::minstd_rand generator; // Linear Congruential generator
@@ -17,15 +19,16 @@ class Random {
         distribution = std::uniform_real_distribution<float>(0, 0.999999f);
     }
 public:
+
     static Random& GetInstance() {
         return instance;
     }
-    Vec3 GetWorldRandomHemisphereDirection(Vec3 normal);
-    Vec3 GetRandomHemisphereDirection(float cos_theta, float phi) const;
 
     float GetUniformRandom();
 
     Vec3 BeckmannSample(float roughness);
+    Vec3 GetWorldRandomHemishpereDirectionUniform(Vec3 normal);
+    Vec3 GetWorldRandomHemishpereDirectionCosine(Vec3 normal);
 };
 
 
