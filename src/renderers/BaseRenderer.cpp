@@ -5,12 +5,14 @@
 #include <iostream>
 #include <objects/TriMesh.h>
 #include <core/BVH.h>
+#include <ctime>
 
 #define DUMP_VAR(x) cout << #x ": " << x << '\n';
 
 using std::cout;
 using std::endl;
 using std::max;
+using std::string;
 using std::unique_ptr;
 
 BaseRenderer::BaseRenderer(Scene* scene, SDL_Window* window, CameraControls* const controls, Options* options)
@@ -91,8 +93,12 @@ void BaseRenderer::DrawFrametime() {
 void BaseRenderer::DumpScreenshot() {
 
     SDL_Surface* surface = SDL_GetWindowSurface(window);
-    std::string name = typeid(*this).name();
-    SDL_SaveBMP(surface, (std::string("../../dumps/") + name + ".bmp").c_str());
+    string name = typeid(*this) == typeid(CppRenderer) ? "C++" : "CL" ;
+    time_t now_t = std::time(nullptr);
+    tm* now = std::localtime(&now_t);
+    string time = std::to_string(now->tm_hour) + "h_" + std::to_string(now->tm_min);
+
+    SDL_SaveBMP(surface, (string("../../dumps/") + time + "_" + name + ".bmp").c_str());
 }
 
 void BaseRenderer::KeyEvent(SDL_Keysym keysym, SDL_EventType type) {
