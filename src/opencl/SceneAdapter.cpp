@@ -118,15 +118,30 @@ CLBrdf GetCLBrdf(const Material* material, map<TextureUbyte*, char>& texture_ind
     cl_brdf.albedo = 0.7f;
     cl_brdf.reflection = 0.4f;
 
-    const Standard* standard = dynamic_cast<const Standard*>(material);
+    const OldMaterial* standard = dynamic_cast<const OldMaterial*>(material);
 
     if (standard != nullptr) {
         cl_brdf.type = LAMBERTIAN | MICROFACET;
-
+        cl_brdf.use_metalness = false;
+        cl_brdf.packed_metal_rough = false;
+        
         SetTextureParameter(texture_index_map, standard->GetAlbedo(), cl_brdf.albedo_map_index, &cl_brdf.albedo);
         SetTextureParameter(texture_index_map, standard->GetReflectance(), cl_brdf.reflection_map_index, &cl_brdf.reflection);
         SetTextureParameter(texture_index_map, standard->GetRoughness(), cl_brdf.roughness_map_index, &cl_brdf.roughness);
         SetTextureParameter(texture_index_map, standard->GetNormal(), cl_brdf.normal_map_index);
+    }
+
+    const MetallicWorkflow* metallic_workflow = dynamic_cast<const MetallicWorkflow*>(material);
+
+    if (metallic_workflow != nullptr) {
+        cl_brdf.type = LAMBERTIAN | MICROFACET;
+        cl_brdf.use_metalness = true;
+        cl_brdf.packed_metal_rough = metallic_workflow->IsPacked();
+
+        SetTextureParameter(texture_index_map, metallic_workflow->GetAlbedo(), cl_brdf.albedo_map_index, &cl_brdf.albedo);
+        SetTextureParameter(texture_index_map, metallic_workflow->GetMetallic(), cl_brdf.metalness_map_index, &cl_brdf.metalness);
+        SetTextureParameter(texture_index_map, metallic_workflow->GetRoughness(), cl_brdf.roughness_map_index, &cl_brdf.roughness);
+        SetTextureParameter(texture_index_map, metallic_workflow->GetNormal(), cl_brdf.normal_map_index);
     }
 
     const LambertianMaterial* lambertian = dynamic_cast<const LambertianMaterial*>(material);

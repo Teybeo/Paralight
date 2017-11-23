@@ -21,13 +21,16 @@ struct alignas(16) CLBrdf {
     char roughness_map_index;   // 38
     char reflection_map_index;  // 39
     char normal_map_index;      // 40
-    char pad[7];                // 41 - 47
+    char packed_metal_rough;    // 41
+    char use_metalness;         // 42
+    char metalness_map_index;   // 43
+    float metalness;            // 44 - 47
 };
 
-#define LAMBERTIAN    0b0001
-#define MICROFACET    0b0010
-#define MIRROR        0b0100
-#define FRESNEL_BLEND 0b1000
+#define LAMBERTIAN        0b0001
+#define MICROFACET        0b0010
+#define MIRROR            0b0100
+#define FRESNEL_BLEND     0b1000
 
 #define MATCH_BITFIELD(V, B) ( ((V) & (B)) == (B) )
 

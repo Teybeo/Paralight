@@ -30,8 +30,10 @@ set(SOURCE_FILES ${SOURCE_FILES}
         objects/Intersectable.h objects/Intersectable.cpp)
 
 set(SOURCE_FILES ${SOURCE_FILES}
+        core/Material.cpp core/Material.h
         material/BrdfStack.cpp material/BrdfStack.h
-        material/Brdf.h core/Material.h)
+        material/Brdf.h
+        )
 
 set(SOURCE_FILES ${SOURCE_FILES}
     hdrloader/hdrloader.cpp hdrloader/hdrloader.h)

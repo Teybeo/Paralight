@@ -31,8 +31,8 @@ App::App(std::string title) {
     camera_controls.SetPosition(scene.cam_pos);
     camera_controls.SetRotation(scene.yz_angle, scene.xz_angle);
 
-//    renderer = new CppRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
-    renderer = new OpenCLRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
+    renderer = new CppRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
+//    renderer = new OpenCLRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
 
     overlay = new GUI {&options, gui_window.getSDL_window(), renderer, &scene};
 

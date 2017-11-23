@@ -25,7 +25,8 @@ Scene::Scene(string model_file) {
 //    std::string env = "Sunset at pier.jpg";
 //    std::string env = "SnowPano_4k_Ref.hdr";
 //    std::string env = "Sky_Clear_1K.hdr";
-    std::string env = "panorama_map.hdr";
+//    std::string env = "fish_eagle_hill_4k.hdr";
+    std::string env = "autumn_hockey_4k.hdr";
 //    std::string env = "st_nicolaus_church_interior.hdr";
 //    std::string env = "Sponza.hdr";
 
@@ -70,7 +71,12 @@ void Scene::LoadObjects(const string& file) {
 //    Load_TexturedSphere();
 //    LoadSomeLights();
     LoadModel(file);
-
+    
+    if (objects.empty()) {
+        cout << "Error: no model loaded" << endl;
+        throw std::exception();
+    }
+    
     bvh2 = new BVH2 {this};
 
 //    exit(0);
@@ -119,7 +125,7 @@ void Scene::LoadSomeLights() {
 
     for (size_t i = 0; i < pos.size(); ++i) {
         Object3D* light = Object3D::CreateSphere(pos[i].x, pos[i].y, pos[i].z, 2);
-        light->material = new Standard {0.4f, 0.1f, 0.1f};
+        light->material = new OldMaterial {0.4f, 0.1f, 0.1f};
         light->setEmission(10);
         objects.push_back(unique_ptr<Object3D>(light));
     }
@@ -138,8 +144,8 @@ void Scene::Load_CornellBox() {
 
     Object3D* a = Object3D::CreateSphere(-1, -2, 0);
     Object3D* b = Object3D::CreateSphere(1, -2, 2.5f);
-    a->material = new Standard(yellow, 0.7, 0.2);
-    b->material = new Standard(yellow, 0.5, 0.02);
+    a->material = new OldMaterial(yellow, 0.7, 0.2);
+    b->material = new OldMaterial(yellow, 0.5, 0.02);
     objects.push_back(unique_ptr<Object3D>(a));
     objects.push_back(unique_ptr<Object3D>(b));
 
@@ -157,7 +163,7 @@ void Scene::Load_CornellBox() {
     right->material  = new LambertianMaterial(green);
     top->material    = new LambertianMaterial(yellow);
     back->material   = new LambertianMaterial(yellow);
-    bottom->material   = new Standard(yellow, 0.4, 0.1);
+    bottom->material   = new OldMaterial(yellow, 0.4, 0.1);
     objects.push_back(unique_ptr<Object3D>(left));
     objects.push_back(unique_ptr<Object3D>(right));
     objects.push_back(unique_ptr<Object3D>(top));
@@ -191,7 +197,7 @@ void Scene::Load_SphereGrid(int nb) {
 //            s->brdf = new Lambertian(color);
 //            s->brdf_stack = new StandardStack (color, 1, float(x)/nb);
 //            s->brdf_stack = new BrdfStack(new Lambertian(color));
-                s->material = new Standard(color, float(y) / nb, float(x) / nb);
+                s->material = new OldMaterial(color, float(y) / nb, float(x) / nb);
 //            s->material = new LambertianMaterial {color};
 //            s->brdf_stack = new StandardStack (color, {1}, 0);
                 objects.push_back(unique_ptr<Object3D>(s));
@@ -210,7 +216,7 @@ void Scene::Load_SphereGrid(int nb) {
 //    objects.push_back(unique_ptr<Object3D>(test));
 
     Object3D* egzeg = Object3D::CreateSphere(20, 0, 0);
-    egzeg->material = new Standard(0, 0.5, 0.5);
+    egzeg->material = new OldMaterial(0, 0.5, 0.5);
 //    objects.push_back(unique_ptr<Object3D>(egzeg));
 }
 
@@ -233,7 +239,7 @@ void Scene::Load_MirrorRoom() {
 //            s->setEmission(color * 50 * (rand() % 20 == 0 ));
 //            s->brdf_stack = new StandardStack (color, 1, float(x)/nb);
 //            s->brdf_stack = new BrdfStack(new Lambertian(color));
-            s->material = new Standard (color, float(y)/nb, float(x)/nb);
+            s->material = new OldMaterial (color, float(y)/nb, float(x)/nb);
 //            s->brdf_stack = new StandardStack (color, {1}, 0);
             objects.push_back(unique_ptr<Object3D>(s));
         }
@@ -245,7 +251,7 @@ void Scene::Load_MirrorRoom() {
     Object3D* back   = Object3D::CreatePlane(Vec3{0, 0, -40}, Vec3{0, 0, 1});
     Object3D* front   = Object3D::CreatePlane(Vec3{0, 0, 40}, Vec3{0, 0, 1});
 //    BrdfStack* mat = new StandardStack (0.4, 0.4, 0.1);
-    Material* mat = new Standard({0.5}, 0.2, 0.2);
+    Material* mat = new OldMaterial({0.5}, 0.2, 0.2);
     left->material   = mat;
     left->material   = mat;
     right->material  = mat;
@@ -267,7 +273,7 @@ void Scene::Load_Floor() {
 //    plane->brdf = new Mirror;
 //    plane->brdf = new Lambertian(1);
 //    plane->spec = new CookTorrance({0.2f}, 0.4);
-    plane->material = new Standard (1, 0.1f, 0.4);
+    plane->material = new OldMaterial (1, 0.1f, 0.4);
 //    plane->brdf_stack = new BrdfStack(new Lambertian(1));
 //    plane->brdf_stack = new MicrofacetMaterial {0.2f, 0.4f};
     objects.push_back(unique_ptr<Object3D>(plane));
@@ -316,11 +322,11 @@ void Scene::Load_TexturedSphere() {
 //    Object3D* e = Object3D::CreateSphere(0, 0, -8);
 //    Object3D* f = Object3D::CreateSphere(0, 0, -10);
 //    Object3D* g = Object3D::CreateSphere(0, 0, -12);
-    a->material = new Standard {albedo_tex, roughness_tex, reflectance_tex, normal_tex};
-//    b->material = new Standard {albedo_tex, roughness_tex, reflectance_tex};
+    a->material = new OldMaterial {albedo_tex, roughness_tex, reflectance_tex, normal_tex};
+//    b->material = new OldMaterial {albedo_tex, roughness_tex, reflectance_tex};
 
-//    sphere->material = new Standard {{0.45, 0.03, 0.01}, 0.1f, 0.04f, normal_tex};
-//    sphere->material = new Standard {1, 0.1f, 0.04f};
+//    sphere->material = new OldMaterial {{0.45, 0.03, 0.01}, 0.1f, 0.04f, normal_tex};
+//    sphere->material = new OldMaterial {1, 0.1f, 0.04f};
 //    sphere->material = new LambertianMaterial {0.7f};
 //    sphere->material = new LambertMaterial(albedo_map);
 //    sphere->material = new MicrofacetMaterial(reflectance_map, roughness_map);

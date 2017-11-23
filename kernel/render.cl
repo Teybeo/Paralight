@@ -113,9 +113,8 @@ float3 Trace(Ray ray, global Node2* bvh_root, global Object3D* objects, VERTEX_D
 //        shading_normal = normal;
 //        return shading_normal;
 
-         EvaluateMaterial(&ray.direction, &material, material_index, normal, shading_normal, uv, brdfs, options->brdf_bitfield, texture_array, info_array, RNG_SEED);
-         }
-
+        EvaluateMaterial(&ray.direction, &material, material_index, normal, shading_normal, uv, brdfs, options->brdf_bitfield, texture_array, info_array, RNG_SEED);
+        }
 //        return material;
 
         // Slightly displace the bounce point to avoid self-intersection
@@ -126,7 +125,7 @@ float3 Trace(Ray ray, global Node2* bvh_root, global Object3D* objects, VERTEX_D
 
         #if 1
         float test = max(material.x, max(material.y, material.z));
-        if (test < 0.2f ){
+        if (test < 0.1f) {
             float rand = getRandom(RNG_SEED);
             if (rand > test)
                 return (float3)(0); // Absorption

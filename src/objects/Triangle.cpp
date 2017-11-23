@@ -112,3 +112,15 @@ Vec3 Triangle::GetCenter() const {
     return center;
 }
 
+std::ostream& operator<< (std::ostream& out, const Triangle& tri) {
+    
+    out << tri.A_index << " / " << tri.B_index << " / " << tri.C_index << "    " << endl;
+    
+    Vec3 A = tri.trimesh_ptr->pos_array[tri.A_index];
+    Vec3 B = tri.trimesh_ptr->pos_array[tri.B_index];
+    Vec3 C = tri.trimesh_ptr->pos_array[tri.C_index];
+    
+    out << A << "   " << B << "   " << C;
+    
+    return out;
+}

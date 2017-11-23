@@ -1,9 +1,9 @@
 #ifndef BRDF_CL
 #define BRDF_CL
 
-#define LAMBERTIAN (1 << 0)
-#define MICROFACET (1 << 1)
-#define MIRROR     (1 << 2)
+#define LAMBERTIAN        (1 << 0)
+#define MICROFACET        (1 << 1)
+#define MIRROR            (1 << 2)
 
 // Max type of this struct is float3 (aka float4)
 // So aligned on 16 bytes
@@ -16,8 +16,11 @@ typedef struct Brdf {
     char roughness_map_index;  // [38]
     char reflection_map_index; // [39]
     char normal_map_index;     // [40]
-    // [41 - 47]
-    // Options must be 16-aligned so 7 padding
+    char packed_metal_rough;   // [41]
+    char use_metalness;        // [42]
+    char metalness_map_index;  // [43]
+    float metalness;           // [44 - 47]
+    // Options must be 16-aligned
     // 48 bytes total
 } Brdf;
 

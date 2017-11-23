@@ -10,6 +10,7 @@
 #include <fstream>
 #include <SDL_timer.h>
 #include <memory>
+#include <numeric>
 
 using std::string;
 using std::vector;

@@ -5,7 +5,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(COMMON_FLAGS -Wall -fopenmp)
+list(APPEND COMMON_FLAGS -fopenmp)
+
+# Workaround gcc 7.2 segfault in debug
+list(APPEND COMMON_FLAGS -save-temps)
 
 set(BUILD_64_BIT "ON")
 set(DEFINITIONS USE_OPENMP)
@@ -24,6 +27,7 @@ endif()
 
 # Custom Debug definition to enable/disable stuff at compile-time
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG_BUILD")
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse4 -mfpmath=sse")

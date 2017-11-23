@@ -33,7 +33,7 @@ float3 Sample_Envmap(image2d_t image, float3 direction) {
 
     float2 uv = SphericalToCartesian(direction);
 
-    return Sample(image, uv.x, uv.y);
+    return Sample(image, 1-uv.x, uv.y);
 }
 
 /*

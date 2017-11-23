@@ -36,6 +36,8 @@ public:
     friend class OpenCLRenderer;
 
     friend CLObject3D GetCLObject3D(const Object3D& object);
+    
+    friend std::ostream& operator<< (std::ostream& out, const Triangle& tri);
 };
 
 #endif //PATHTRACER_TRIANGLE_H

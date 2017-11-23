@@ -187,17 +187,6 @@ void GUI::showLightingSettings() {
     if (ImGui::CollapsingHeader("Render settings", nullptr, true, true)) {
 
         ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
-            int temp_envmap_index = envmap_index;
-            ImGui::Combo("Environnement Map", &temp_envmap_index, item_getter, &envmap_array, (int) envmap_array.size());
-
-            if (temp_envmap_index != envmap_index) {
-                envmap_index = temp_envmap_index;
-                scene->env_map.reset(new TextureFloat {envmap_array[envmap_index]});
-                scene->envmap_has_changed = true;
-            }
-        ImGui::PopItemWidth();
-
-        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
             int temp_model_index = model_index;
             bool changed = ImGui::Combo("Model", &temp_model_index, item_getter, &model_array, (int) model_array.size());
 
@@ -207,6 +196,17 @@ void GUI::showLightingSettings() {
                 scene->LoadObjects(model_array[model_index]);
                 scene->model_has_changed = true;
             }
+        ImGui::PopItemWidth();
+
+        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
+        int temp_envmap_index = envmap_index;
+        ImGui::Combo("Environnement Map", &temp_envmap_index, item_getter, &envmap_array, (int) envmap_array.size());
+
+        if (temp_envmap_index != envmap_index) {
+            envmap_index = temp_envmap_index;
+            scene->env_map.reset(new TextureFloat {envmap_array[envmap_index]});
+            scene->envmap_has_changed = true;
+        }
         ImGui::PopItemWidth();
 
         bool lambertian = (bool) (options->brdf_bitfield & LAMBERTIAN);
@@ -222,7 +222,7 @@ void GUI::showLightingSettings() {
         options_has_changed |= ImGui::Checkbox("Tonemapping", &options->use_tonemapping);
         options_has_changed |= ImGui::Checkbox("Emissive lighting", &options->use_emissive_lighting);
         options_has_changed |= ImGui::Checkbox("Distant Environnment lighting", &options->use_distant_env_lighting);
-        options_has_changed |= ImGui::Checkbox("Debug", &renderer->debug);
+//        options_has_changed |= ImGui::Checkbox("Debug", &renderer->debug);
 //        if (ImGui::SliderInt("Depth target", &options->depth_target, 0, 30, "%.0f")) {
 //            options_has_changed = true;
 //        }
@@ -264,12 +264,20 @@ void GUI::showMaterialSettings(Object3D* object) {
         return;
     }
 
-    Standard* standard = dynamic_cast<Standard*>(object->material);
+    OldMaterial* standard = dynamic_cast<OldMaterial*>(object->material);
     if (standard != nullptr) {
         showTextureSettings(standard->GetAlbedo(), "Albedo");
         showTextureSettings(standard->GetRoughness(), "Roughness");
         showTextureSettings(standard->GetReflectance(), "Reflectance");
         showTextureSettings(standard->GetNormal(), "Normal");
+    }
+    
+    MetallicWorkflow* metallic_workflow = dynamic_cast<MetallicWorkflow*>(object->material);
+    if (metallic_workflow != nullptr) {
+        showTextureSettings(metallic_workflow->GetAlbedo(), "Albedo");
+        showTextureSettings(metallic_workflow->GetRoughness(), "Roughness");
+        showTextureSettings(metallic_workflow->GetMetallic(), "Metalness");
+        showTextureSettings(metallic_workflow->GetNormal(), "Normal");
     }
 
     LambertianMaterial* lambertian = dynamic_cast<LambertianMaterial*>(object->material);

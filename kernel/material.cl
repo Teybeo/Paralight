@@ -13,7 +13,20 @@ void EvaluateMaterial(float3* ray_direction, float3* material, int index, float3
     if (sampled_brdf_type == LAMBERTIAN) {
 
         float3 albedo = EvaluateParameter(brdfs[index].albedo, brdfs[index].albedo_map_index, uv, texture_array, info_array);
-        float3 f = Sample_Lambertian_f(albedo, outgoing_dir, ray_direction, &pdf, shading_normal, RNG_SEED);
+        float3 f;
+
+        if (brdfs[index].use_metalness) {
+            float3 metalness = EvaluateParameter(brdfs[index].metalness, brdfs[index].metalness_map_index, uv, texture_array, info_array);
+
+            float3 base_color = albedo;
+            base_color = mix(base_color * (float3)(1 - 0.04), 0, metalness.z);
+
+            f = Sample_Lambertian_f(base_color, outgoing_dir, ray_direction, &pdf, shading_normal, RNG_SEED);
+        }
+        else {
+            f = Sample_Lambertian_f(albedo, outgoing_dir, ray_direction, &pdf, shading_normal, RNG_SEED);
+        }
+
 //        float cos_factor = max(dot(normal, *ray_direction), 0.f);
         float cos_factor = max(dot(shading_normal, *ray_direction), 0.f);
 //        float cos_factor = max(dot(shading_normal, *ray_direction), 0.f) * (dot(normal, *ray_direction) > 0);
@@ -22,24 +35,57 @@ void EvaluateMaterial(float3* ray_direction, float3* material, int index, float3
         // As fresnel is included into microfacet brdf, need to use fresnel with the same distribution
         // That's why we're taking a microfacet sample inside the lambertian... yes dirty :<
         if ((brdfs[index].type & brdf_bitfield) & MICROFACET) {
-            float3 reflection = EvaluateParameter(brdfs[index].reflection, brdfs[index].reflection_map_index, uv, texture_array, info_array);
+
+            float3 reflectance;
+
+            if (brdfs[index].use_metalness) {
+                float3 metalness = EvaluateParameter(brdfs[index].metalness, brdfs[index].metalness_map_index, uv, texture_array, info_array);
+                reflectance = mix((float3)(0.04), albedo, metalness.z);
+            }
+            else {
+                reflectance = EvaluateParameter(brdfs[index].reflection, brdfs[index].reflection_map_index, uv, texture_array, info_array);
+            }
+
             float roughness = EvaluateParameter(brdfs[index].roughness, brdfs[index].roughness_map_index, uv, texture_array, info_array).x;
+//            roughness *= -1;
+//            roughness *= roughness;
 
             float3 micro_normal = BeckmannSample(roughness, RNG_SEED);
             micro_normal = WorldToTangent(normal, micro_normal);
             float3 specular_ray = normalize(reflect(outgoing_dir, micro_normal));
 
             float3 half_vector = normalize(specular_ray + outgoing_dir);
-            f *= 1.f - Fresnel(reflection, specular_ray, half_vector);
+            f *= 1.f - Fresnel(reflectance, specular_ray, half_vector);
         }
         *material *= (f * cos_factor) / pdf;
 
     } else if (sampled_brdf_type == MICROFACET) {
 
-        float3 reflection = EvaluateParameter(brdfs[index].reflection, brdfs[index].reflection_map_index, uv, texture_array, info_array);
-        float roughness = EvaluateParameter(brdfs[index].roughness, brdfs[index].roughness_map_index, uv, texture_array, info_array).x;
+        float3 reflectance;
+        float roughness;
 
-        float3 f = Sample_Microfacet_f(roughness, reflection, outgoing_dir, ray_direction, &pdf, shading_normal, RNG_SEED);
+        if (brdfs[index].use_metalness) {
+            float3 albedo = EvaluateParameter(brdfs[index].albedo, brdfs[index].albedo_map_index, uv, texture_array, info_array);
+
+            float3 metalness = EvaluateParameter(brdfs[index].metalness, brdfs[index].metalness_map_index, uv, texture_array, info_array);
+            reflectance = mix((float3)(0.04), albedo, metalness.z);
+
+            if (brdfs[index].packed_metal_rough)
+                roughness = metalness.y;
+            else
+                roughness = EvaluateParameter(brdfs[index].roughness, brdfs[index].roughness_map_index, uv, texture_array, info_array).x;
+        }
+        else {
+            reflectance = EvaluateParameter(brdfs[index].reflection, brdfs[index].reflection_map_index, uv, texture_array, info_array);
+            roughness = EvaluateParameter(brdfs[index].roughness, brdfs[index].roughness_map_index, uv, texture_array, info_array).x;
+        }
+
+//        roughness *= roughness;
+//        *material = roughness;
+//        return;
+        roughness = max(0.001f, roughness);
+
+        float3 f = Sample_Microfacet_f(roughness, reflectance, outgoing_dir, ray_direction, &pdf, shading_normal, RNG_SEED);
 
 //        float cos_factor = max(dot(normal, *ray_direction), 0.f);
         float cos_factor = max(dot(shading_normal, *ray_direction), 0.f) * (dot(normal, *ray_direction) > 0);
@@ -76,7 +122,7 @@ float3 EvaluateNormalParameter(float3 scalar, const char tex_index, const float3
     else {
         float3 shading_normal = Sample_Buffer(texture_array, info_array, tex_index, uv);
         shading_normal = shading_normal * 2 - 1;
-        shading_normal.y *= -1;
+//        shading_normal.y *= -1;
         shading_normal = TangentToWorld(shading_normal, normal);
         return shading_normal;
     }

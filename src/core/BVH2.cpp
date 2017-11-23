@@ -4,6 +4,7 @@
 #include "objects/TriMesh.h"
 
 #include <SDL_timer.h>
+#include <algorithm>
 
 int BVH2::ray_bbox_test_count;
 int BVH2::ray_bbox_hit_count;

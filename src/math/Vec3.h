@@ -19,7 +19,7 @@ public:
 
     Vec3() = default;
     Vec3(const Vec3& other) = default;
-    Vec3(float x, float y, float z) : x(x), y(y), z(z) { }
+    Vec3(float x, float y, float z = 0) : x(x), y(y), z(z) { }
     Vec3(float value) : x(value), y(value), z(value) { }
 
     friend std::ostream& operator<<(std::ostream& out, const Vec3& vec);
@@ -209,7 +209,7 @@ public:
 
 #define UP Vec3(0, 1, 0)
 
-    //TODO: Transform this vector from tangent space to world space
+    // Transform this vector from tangent space to world space
     // The tangent space is constructed from the worldspace normal passed in argument
     Vec3 TangentToWorld2(Vec3 normal) {
 
@@ -260,7 +260,18 @@ public:
                 powf(y, exponent),
                 powf(z, exponent)};
     }
-
+    
+    Vec3 floor() const {
+        return Vec3{
+                std::floor(x),
+                std::floor(y),
+                std::floor(z)};
+    }
+    
+    static Vec3 mix(Vec3 A, Vec3 B, float mix_factor) {
+        return (A * (1 - mix_factor)) + (B * mix_factor);
+    }
+    
     void checkNormal() const {
         if (length() != 1.0e-2) {
             std::cout.setf( std::ios::fixed, std:: ios::floatfield ); // floatfield set to fixed
@@ -283,8 +294,7 @@ public:
 
         return Vec3{u, v, 0};
     }
-
-    Vec3 Abs();
+    
 };
 
 inline Vec3 operator*(Vec3 vec, float scalar) {
