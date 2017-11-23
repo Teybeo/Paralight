@@ -62,7 +62,7 @@ void ImageTexture<T>::Load_Generic(bool store_in_linear) {
         std::cerr << SDL_GetError() << endl;
         throw std::bad_exception();
     }
-
+    
     width = (size_t) surface->w;
     height = (size_t) surface->h;
 
@@ -73,7 +73,24 @@ void ImageTexture<T>::Load_Generic(bool store_in_linear) {
     channel_count = Bpp; // Meh
     data = new T[Bpp * width * height];
 
-    SDL_ConvertPixels(surface->w, surface->h, surface->format->format, surface->pixels, surface->pitch, format->format, data, int(width * Bpp));
+    auto error = SDL_ConvertPixels(surface->w, surface->h, surface->format->format, surface->pixels, surface->pitch, format->format, data, int(width * Bpp));
+    if (error) {
+        std::cerr << "Error Loading [" << path << "]" << endl;
+        std::cerr << SDL_GetError();
+    
+        SDL_Surface* converted_surface = SDL_ConvertSurface(surface, format, 0);
+        if (converted_surface == nullptr) {
+            std::cerr << "Error loading [" << path << "]" << endl;
+            std::cerr << "Failed to convert surface" << endl;
+            std::cerr << SDL_GetError() << endl;
+            throw std::bad_exception();
+        }
+        
+        auto converted_pixels = static_cast<T*>(converted_surface->pixels);
+        
+        std::copy(converted_pixels, converted_pixels + (channel_count * width * height), data);
+        SDL_FreeSurface(converted_surface);
+    }
 
     SDL_FreeSurface(surface);
 
@@ -129,7 +146,7 @@ Vec3 ImageTexture<T>::SampleEnvmap(const Vec3& direction) {
 
     Vec3 uv = SphericalToCartesian(direction);
 
-    return Sample(uv.x, uv.y);
+    return Sample(1 - uv.x, uv.y);
 }
 
 template <typename T>
