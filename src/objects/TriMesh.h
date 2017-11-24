@@ -34,12 +34,13 @@ public:
     friend class SceneAdapter;
     friend class Triangle;
     friend CLObject3D GetCLObject3D(const Object3D& object);
-
+    friend std::ostream& operator<< (std::ostream& out, const Triangle& tri);
+    
     TriMesh() = default;
     TriMesh(const std::string& filename, std::string directory = "");
-
-    void ImportAssimpMesh(const aiScene* ai_scene, std::string basic_string);
-
+    
+    void ImportAssimpMesh(const aiScene *ai_scene, std::string directory, std::string ext);
+    
     std::vector<Triangle>& GetTriangles() {
         return triangles;
     }

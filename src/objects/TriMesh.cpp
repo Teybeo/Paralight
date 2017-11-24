@@ -36,7 +36,10 @@ TriMesh::TriMesh(const string& filename, string directory) {
                          | aiProcess_RemoveRedundantMaterials
                          | aiProcess_FindInstances
                          | aiProcess_OptimizeMeshes
+                         | aiProcess_OptimizeGraph
                          | aiProcess_JoinIdenticalVertices
+                         | aiProcess_PreTransformVertices
+
     ;
 
     auto start = high_resolution_clock::now();
@@ -56,9 +59,11 @@ TriMesh::TriMesh(const string& filename, string directory) {
         directory = filename.substr(0, filename.find_last_of('/')) + "/";
     }
 
+    string ext = filename.substr(filename.find_last_of('.'));
+
     start = high_resolution_clock::now();
 
-    ImportAssimpMesh(pScene, directory);
+    ImportAssimpMesh(pScene, directory, ext);
 
     end = high_resolution_clock::now();
     cout << "Import: " << std::chrono::duration<float>(end - start).count() << " s" << endl;
@@ -74,7 +79,7 @@ TriMesh::TriMesh(const string& filename, string directory) {
     sphere_bounds = Sphere {0, 0, 0, radius};
 }
 
-void TriMesh::ImportAssimpMesh(const aiScene* ai_scene, std::string directory) {
+void TriMesh::ImportAssimpMesh(const aiScene *ai_scene, std::string directory, std::string ext) {
 
     unsigned int vertex_total = 0;
 
@@ -131,7 +136,10 @@ void TriMesh::ImportAssimpMesh(const aiScene* ai_scene, std::string directory) {
     materials = vector<unique_ptr<Material>>(ai_scene->mNumMaterials);
 
     for (size_t i = 0; i < materials.size(); ++i) {
-        materials[i] = unique_ptr<Material>(new Standard(ai_scene->mMaterials[i], directory));
+        if (ext == ".gltf")
+            materials[i] = unique_ptr<Material>(new MetallicWorkflow(ai_scene->mMaterials[i], directory));
+        else
+            materials[i] = unique_ptr<Material>(new OldMaterial(ai_scene->mMaterials[i], directory));
     }
 
 }

@@ -24,6 +24,14 @@ public:
         B_index = index_pointer[1];
         C_index = index_pointer[2];
     }
+    
+    Triangle(const int* index_pointer, const TriMesh* triMesh)
+            : trimesh_ptr{triMesh}
+    {
+        A_index = (unsigned int) index_pointer[0];
+        B_index = (unsigned int) index_pointer[1];
+        C_index = (unsigned int) index_pointer[2];
+    }
 
     bool Intersect(const Ray& ray, float& dist_out) const override;
 
