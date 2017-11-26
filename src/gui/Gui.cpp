@@ -3,8 +3,10 @@
 #include "renderers/OpenCLRenderer.h"
 #include "renderers/CppRenderer.h"
 #include "objects/Plane.h"
-#include "imgui/imgui_impl_sdl.h"
+
+#include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
+#include "imgui/imgui_impl_sdl.h"
 
 #include <GL/gl.h>
 #include <iostream>
@@ -45,6 +47,10 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 5));
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5, 5));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+    ImGui::SetColorEditOptions(
+            ImGuiColorEditFlags_Float
+            | ImGuiColorEditFlags_RGB
+    );
 
     window_flags = 0;
     window_flags |= ImGuiWindowFlags_NoTitleBar;
@@ -287,7 +293,7 @@ void GUI::showMaterialSettings(Object3D* object) {
 }
 
 void GUI::showTextureSettings(std::shared_ptr<Texture> texture, const char* texture_name) {
-
+    
     ValueTex3f* scalar_tex = dynamic_cast<ValueTex3f*>(texture.get());
 
     if (scalar_tex != nullptr) {

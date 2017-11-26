@@ -51,14 +51,10 @@ set(SOURCE_FILES ${SOURCE_FILES}
 
 set(SOURCE_FILES ${SOURCE_FILES}
         gui/Gui.cpp gui/Gui.h
-        gui/imgui/imgui.cpp gui/imgui/imgui.h
+        gui/imgui/imgui.cpp
+        gui/imgui/imgui_impl_sdl.cpp
         gui/imgui/imgui_draw.cpp
-        gui/imgui/imgui_impl_sdl.cpp gui/imgui/imgui_impl_sdl.h
-        gui/imgui/imgui_internal.h
-        gui/imgui/imgui_draw.cpp
-        gui/imgui/stb_rect_pack.h
-        gui/imgui/stb_textedit.h
-        gui/imgui/stb_truetype.h)
+        )
 
 #set(SOURCE_FILES ${SOURCE_FILES}
 #        lights_unused/Light.cpp lights_unused/Light.h

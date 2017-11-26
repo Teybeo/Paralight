@@ -1,8 +1,7 @@
 #ifndef PATHTRACER_GUI_H
 #define PATHTRACER_GUI_H
 
-#include "imgui/imgui.h"
-
+#include <math/Vec3.h>
 #include <memory>
 #include <vector>
 
@@ -10,6 +9,7 @@ typedef struct SDL_Window SDL_Window;
 typedef struct BaseRenderer BaseRenderer;
 typedef struct Object3D Object3D;
 typedef struct Scene Scene;
+typedef int ImGuiWindowFlags;
 
 class Options;
 class Texture;
@@ -19,7 +19,7 @@ class GUI {
     Options* options;
     SDL_Window* window;
     BaseRenderer*& renderer;
-    ImVec2 window_size;
+    Vec3 window_size;
     ImGuiWindowFlags window_flags;
     int selected_platform;
     int selected_device;

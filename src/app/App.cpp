@@ -2,12 +2,12 @@
 
 #include "renderers/CppRenderer.h"
 #include "renderers/OpenCLRenderer.h"
+#include "gui/imgui/imgui.h"
 #include "gui/imgui/imgui_impl_sdl.h"
 
 #include <SDL.h>
-#include <ctime>
 #include <SDL_image.h>
-#include <iostream>
+#include <ctime>
 #include <chrono>
 
 App::App(std::string title) {
