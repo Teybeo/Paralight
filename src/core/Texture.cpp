@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cstdio>
 #include <cassert>
+#include "app/Chronometer.h"
 
 using std::string;
 using std::cout;
@@ -21,8 +22,8 @@ template <typename T>
 ImageTexture<T>::ImageTexture(const std::string& path, bool store_in_linear) : path(path) {
 
     cout << "Loading [" + path + "] ..." << endl;
-
-    Uint32 start = SDL_GetTicks();
+    
+    Chronometer chrono;
 
     string ext = path.substr(path.find_last_of(".") + 1);
 
@@ -34,7 +35,7 @@ ImageTexture<T>::ImageTexture(const std::string& path, bool store_in_linear) : p
     }
 
     cout << width << " x " << height << " x " << int(channel_count) << " = " << (width * height * sizeof(T) * channel_count) / 1024 << " Ko";
-    cout << ", " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << ", " << chrono.GetSeconds() << " s" << endl;
 }
 
 template <typename T>
@@ -102,7 +103,7 @@ void ImageTexture<T>::Load_Generic(bool store_in_linear) {
 template <typename T>
 void ImageTexture<T>::Load_HDR() {
 
-    Uint32 start = SDL_GetTicks();
+    Chronometer chrono;
 
     HDRLoaderResult result;
     bool ret = HDRLoader::load(path.c_str(), result);
@@ -110,10 +111,10 @@ void ImageTexture<T>::Load_HDR() {
         cout << "Error loading HDR envmap [" << path << "]\n";
         throw std::bad_exception();
     }
-    cout << "HDRLoader in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << "HDRLoader in " << chrono.GetSeconds() << " s" << endl;
 
-    start = SDL_GetTicks();
-
+    chrono.Restart();
+    
     width = (size_t) result.width;
     height = (size_t) result.height;
     channel_count = 4;
@@ -127,7 +128,7 @@ void ImageTexture<T>::Load_HDR() {
         data[channel_count * i + 3] = 0;
     }
 
-    cout << "HDR copied in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << "HDR copied in " << chrono.GetSeconds() << " s" << endl;
 
     free(result.cols);
 }

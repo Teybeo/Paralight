@@ -1,8 +1,9 @@
 #include "App.h"
 
-#include <iostream>
-#include <CL/cl.hpp>
-#include <renderers/OpenCLRenderer.h>
+#ifdef __CL_ENABLE_EXCEPTIONS
+    #include <CL/cl.hpp>
+    #include <renderers/OpenCLRenderer.h>
+#endif
 
 using std::cout;
 

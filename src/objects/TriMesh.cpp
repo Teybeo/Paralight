@@ -7,10 +7,10 @@
 #include "assimp/postprocess.h"
 
 #include <chrono>
+#include "app/Chronometer.h"
 
 using std::string;
 using std::vector;
-using std::chrono::high_resolution_clock;
 using std::unique_ptr;
 
 std::atomic_int TriMesh::triangle_test_count;
@@ -41,8 +41,16 @@ TriMesh::TriMesh(const string& filename, string directory) {
                          | aiProcess_PreTransformVertices
 
     ;
-
-    auto start = high_resolution_clock::now();
+    
+    // Use the file directory to search for materials if no directory was passed in argument
+    if (directory.empty()) {
+        directory = filename.substr(0, filename.find_last_of('/')) + "/";
+    }
+    
+    string ext = filename.substr(filename.find_last_of('.'));
+    
+    
+    Chronometer chrono;
 
     const aiScene* pScene = Importer.ReadFile(filename.c_str(), flags);
     if (pScene == nullptr) {
@@ -51,30 +59,22 @@ TriMesh::TriMesh(const string& filename, string directory) {
         throw std::bad_exception();
     }
 
-    auto end = high_resolution_clock::now();
-    cout << "File reading: " << std::chrono::duration<float>(end - start).count() << " s" << endl;
+    cout << "File reading: " << chrono.GetSeconds() << " s" << endl;
 
-    // Use the file directory to search for materials if no directory was passed in argument
-    if (directory.empty()) {
-        directory = filename.substr(0, filename.find_last_of('/')) + "/";
-    }
-
-    string ext = filename.substr(filename.find_last_of('.'));
-
-    start = high_resolution_clock::now();
+    
+    chrono.Restart();
 
     ImportAssimpMesh(pScene, directory, ext);
 
-    end = high_resolution_clock::now();
-    cout << "Import: " << std::chrono::duration<float>(end - start).count() << " s" << endl;
-
-
-    start = high_resolution_clock::now();
+    cout << "Import: " << chrono.GetSeconds() << " s" << endl;
+    
+    
+    chrono.Restart();
 
     float radius = FindSphereBoundRadius(pos_array);
 
-    end = high_resolution_clock::now();
-    cout << "Bounds scan: " << std::chrono::duration<float>(end - start).count() << " s" << endl;
+    cout << "Bounds scan: " << chrono.GetSeconds() << " s" << endl;
+
 
     sphere_bounds = Sphere {0, 0, 0, radius};
 }

@@ -4,6 +4,7 @@
 #include "objects/Plane.h"
 #include "objects/Triangle.h"
 #include "opencl/SceneAdapter.h"
+#include "app/Chronometer.h"
 
 #include <fstream>
 #include <SDL_timer.h>
@@ -205,13 +206,13 @@ Program CreateProgram(cl::Context& context, cl::CommandQueue& queue, cl::Device&
             "render.cl",
     };
 
-    Uint32 start = SDL_GetTicks();
+    Chronometer chrono;
 
     Program program {source_array, build_options};
 
     program.Build(context, device);
 
-    cout << "Program compiled in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << "Program compiled in " << chrono.GetSeconds() << " s" << endl;
 
     return program;
 }
@@ -301,18 +302,17 @@ void OpenCLRenderer::UpdateSceneBuffers() {
     if (SDL_GetTicks() < last_check + 16)
         return;
 
-
-    uint32_t start = SDL_GetTicks();
+    Chronometer chrono;
 
     SceneAdapter adapter {scene};
 
-    cout << "SceneAdapter created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << "SceneAdapter created in " << chrono.GetSeconds() << " s" << endl;
 
-    start = SDL_GetTicks();
+    chrono.Restart(),
 
     CreateSceneBuffers(scene);
 
-    cout << "SceneBuffers created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << "SceneBuffers created in " << chrono.GetSeconds() << " s" << endl;
 
     SetKernelArguments(render_kernel);
 
@@ -331,19 +331,19 @@ void OpenCLRenderer::UpdateObjectBuffer() {
         return;
 
     last_check = SDL_GetTicks();
-
-    uint32_t start = SDL_GetTicks();
+    
+    Chronometer chrono;
 
     SceneAdapter adapter {scene->objects, scene->GetMaterialSet()};
 
-    cout << "SceneAdapter created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << "SceneAdapter created in " << chrono.GetSeconds() << " s" << endl;
 
-    start = SDL_GetTicks();
+    chrono.Restart(),
 
     object_buffer = CreateBuffer(adapter.GetObjectArray(), COPY_TO_DEVICE_FLAGS);
 
-    cout << "Object buffer created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
-
+    cout << "Object buffer created in " << chrono.GetSeconds() << " s" << endl;
+    
     render_kernel.setArg(3, object_buffer);
 }
 
@@ -356,18 +356,18 @@ void OpenCLRenderer::UpdateMaterialBuffer() {
         return;
 
     last_check = SDL_GetTicks();
-
-    uint32_t start = SDL_GetTicks();
+    
+    Chronometer chrono;
 
     SceneAdapter adapter {scene->GetMaterialSet()};
 
-    cout << "SceneAdapter created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << "SceneAdapter created in " << chrono.GetSeconds() << " s" << endl;
 
-    start = SDL_GetTicks();
+    chrono.Restart();
 
     brdfs_buffer = CreateBuffer(adapter.GetBrdfArray(), COPY_TO_DEVICE_FLAGS);
 
-    cout << "Brdf buffer created in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << "Brdf buffer created in " << chrono.GetSeconds() << " s" << endl;
 
     render_kernel.setArg(7, brdfs_buffer);
 }

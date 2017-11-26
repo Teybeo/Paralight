@@ -1,10 +1,11 @@
-#include "CppRenderer.h"
 #include "BaseRenderer.h"
+
+#include "app/Chronometer.h"
+#include "objects/TriMesh.h"
+#include "core/BVH.h"
 
 #include <SDL_timer.h>
 #include <iostream>
-#include <objects/TriMesh.h>
-#include <core/BVH.h>
 #include <ctime>
 
 #define DUMP_VAR(x) cout << #x ": " << x << '\n';
@@ -76,24 +77,24 @@ void BaseRenderer::DrawFrametime() {
     static Uint32 last_draw_timestamp = 0;
 
     // Get CPU time
-    static Uint32 debut = 0;
-    float duration = (SDL_GetTicks() - debut);
+    static Chronometer chrono;
+    float duration = chrono.GetMilliseconds();
     float now = SDL_GetTicks() / 1000.f - last_clear_timestamp;
 
     // Limit the title bar update rate to 0.1/s to keep it readable and not spam dwm.exe
     if (fabsf(SDL_GetTicks() - last_draw_timestamp) >= 100) {
-        snprintf(title, sizeof(title), "CPU: %.0f ms, frames: %d, time: %.2f s - spp: %d, bounce: %d", duration, frame_number, now, options->sample_count, options->bounce_cout);
+        snprintf(title, sizeof(title), "CPU: %.2f ms, frames: %d, time: %.2f s - spp: %d, bounce: %d", duration, frame_number, now, options->sample_count, options->bounce_cout);
         SDL_SetWindowTitle(window, title);
         last_draw_timestamp = SDL_GetTicks();
     }
 
-    debut = SDL_GetTicks();
+    chrono.Restart();
 }
 
 void BaseRenderer::DumpScreenshot() {
 
     SDL_Surface* surface = SDL_GetWindowSurface(window);
-    string name = typeid(*this) == typeid(CppRenderer) ? "C++" : "CL" ;
+    string name = string(typeid(*this).name()).find("CPP") ? "C++" : "CL" ;
     time_t now_t = std::time(nullptr);
     tm* now = std::localtime(&now_t);
     string time = std::to_string(now->tm_hour) + "h_" + std::to_string(now->tm_min);

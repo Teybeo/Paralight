@@ -1,7 +1,7 @@
 set(SOURCE_FILES ${SOURCE_FILES}
         app/main.cpp
         app/App.cpp app/App.h
-        app/Window.cpp app/Window.h)
+        app/Window.cpp app/Window.h app/Chronometer.h)
 
 set(SOURCE_FILES ${SOURCE_FILES}
         core/Scene.cpp core/Scene.h

@@ -5,6 +5,7 @@
 
 #include <SDL_timer.h>
 #include <algorithm>
+#include "app/Chronometer.h"
 
 int BVH2::ray_bbox_test_count;
 int BVH2::ray_bbox_hit_count;
@@ -42,14 +43,14 @@ BVH2::BVH2(const Scene* scene) {
     for (const auto& object : scene->objects) {
         build_info_array.push_back( BuildInfo { object->ComputeBBox(), object.get(), object->ComputeBBox().GetCenter() });
     }
-
-    uint32_t start = SDL_GetTicks();
+    
+    Chronometer chrono;
 
     cout << "Building BVH..." << endl;
 
     root = unique_ptr<Node2>(RecursiveBuild(build_info_array, 0, (int) scene->objects.size()));
 
-    cout << "BVH built in " << (SDL_GetTicks() - start) / 1000.f << " s" << endl;
+    cout << "BVH built in " << chrono.GetSeconds() << " s" << endl;
     
 //    ComputeBoundingBoxes(root);
 

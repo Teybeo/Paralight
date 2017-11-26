@@ -324,9 +324,9 @@ void CppRenderer::TracePixel(int x, int y, bool picking) {
 //        if (scene->bvh.FindNearestIntersection(ray, dist, hit_object) == true && hit_object) {
         if (scene->bvh2->FindNearestIntersectionOpti(ray, dist, hit_object) == true && hit_object) {
             selected_object = hit_object;
-            cout << "Hit object: " << typeid(*hit_object).name() << endl;
-            cout << "Hitpos: " << (ray.origin + ray.direction * dist) << " triangle/sub index: " << triangle_index << " / " << submesh_index << endl;
-            if (typeid(*hit_object) == typeid(Triangle)) {
+            cout << "Hit object: " << typeid(*hit_object->shape).name() << endl;
+            cout << "Hitpos: " << (ray.origin + ray.direction * dist) << endl;
+            if (typeid(*hit_object->shape) == typeid(Triangle)) {
                 cout << "Triangle center: " << hit_object->GetCenter() << endl;
             }
         }
@@ -364,3 +364,4 @@ Vec3 linear_to_sRGB(Vec3 vec) {
             float(sRGB_table[(int)(vec.z * (sRGB_LUT_LENGTH - 1) )])
     };
 }
+
