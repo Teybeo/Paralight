@@ -4,8 +4,9 @@
 #include <chrono>
 
 class Chronometer {
-    
-    typedef std::chrono::high_resolution_clock clock;
+    // On MinGW-w64, steady_clock is more precise than high_resolution_clock
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63400
+    typedef std::chrono::steady_clock clock;
     
     clock::time_point start = clock::now();
 
