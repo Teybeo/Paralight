@@ -20,8 +20,6 @@ typedef struct Options {
     float3 origin;                      // [0  - 15]
     float4x4 rotation;                  // [16 - 79]
     float fov;                          // [80 - 83]
-    float lens_radius;                  // [84 - 87]
-    float focal_distance;               // [88 - 91]
     int triangle_count;                 // [92 - 95]
     short sample_count;                 // [96 - 97]
     short bounce_count;                 // [98 - 99]
@@ -35,7 +33,6 @@ typedef struct Options {
     char plane_count;                   // [108]
     char debug;                         // [109]
 //    char pad14[2];                    // [110 - 111]
-    // Options must be 16-aligned so 2 bytes padding
     // 112 bytes = 16 * 7
 } Options;
 
