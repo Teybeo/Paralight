@@ -9,9 +9,7 @@
 
 class App {
 
-//    Window window;
-    Window render_window;
-    Window gui_window;
+    Window window;
     Scene scene;
     BaseRenderer* renderer;
     CameraControls camera_controls;
@@ -20,7 +18,7 @@ class App {
     bool is_running;
 
 public:
-    App(std::string);
+    App();
 
     void Draw();
     void Update();

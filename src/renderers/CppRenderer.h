@@ -14,7 +14,7 @@ public:
 
     ~CppRenderer() override;
 
-    void Draw();
+    void Render();
 
     void TracePixel(int x, int y, bool picking);
 

@@ -67,7 +67,7 @@ public:
     OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls* pControls, Options* options, int platform_index = -1, int device_index = -1);
     ~OpenCLRenderer() override;
 
-    void Draw() override;
+    void Render() override;
 
     void Update() override;
 

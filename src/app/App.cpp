@@ -10,7 +10,7 @@
 #include <ctime>
 #include <chrono>
 
-App::App(std::string title) {
+App::App() {
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cout << "Erreur au chargement de SDL2\n" << SDL_GetError();
@@ -25,16 +25,15 @@ App::App(std::string title) {
     std::srand((unsigned int) std::time(0));
 //    std::srand((unsigned int) 3);
 
-    render_window = Window {title, 512, 512};
-    gui_window = Window {title, 512, 512, 900};
+    window = Window {"Paralight", 1280, 720};
 
     camera_controls.SetPosition(scene.cam_pos);
     camera_controls.SetRotation(scene.yz_angle, scene.xz_angle);
 
-    renderer = new CppRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
-//    renderer = new OpenCLRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
+//    renderer = new CppRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
+    renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
 
-    overlay = new GUI {&options, gui_window.getSDL_window(), renderer, &scene};
+    overlay = new GUI {&options, window.GetSDL_window(), renderer, &scene};
 
     is_running = true;
 }
@@ -49,13 +48,13 @@ void App::Run() {
 }
 
 void App::Draw() {
-
-    renderer->Draw();
-
-    SDL_UpdateWindowSurface(render_window.getSDL_window());
-
+    
+    renderer->Render();
+    renderer->DrawTexture();
     renderer->DrawFrametime();
     overlay->Draw();
+    
+    SDL_GL_SwapWindow(window.GetSDL_window());
 }
 
 void App::Update() {
@@ -85,7 +84,7 @@ void App::Event() {
                 }
                 break;
             case SDL_MOUSEBUTTONUP:
-                if (ev.button.windowID == SDL_GetWindowID(render_window.getSDL_window())) {
+                if (ev.button.windowID == SDL_GetWindowID(window.GetSDL_window())) {
                     renderer->TracePixel(ev.button.x, ev.button.y, ev.button.button == SDL_BUTTON_LEFT);
                 }
                 break;
@@ -105,15 +104,15 @@ void App::Event() {
 
                 switch (ev.user.code) {
                 case BaseRenderer::EVENT_CPP_RENDERER:
-                    renderer = new CppRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
+                    renderer = new CppRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
                     break;
                 case BaseRenderer::EVENT_CL_RENDERER:
-                    renderer = new OpenCLRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options);
+                    renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
                     break;
                 case BaseRenderer::EVENT_CL_PLATFORM_DEVICE_CHANGE:
                     platform_index = *static_cast<int*>(ev.user.data1);
                     device_index   = *static_cast<int*>(ev.user.data2);
-                    renderer = new OpenCLRenderer(&scene, render_window.getSDL_window(), &camera_controls, &options, platform_index, device_index);
+                    renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &camera_controls, &options, platform_index, device_index);
                     break;
                 default:
                     break;

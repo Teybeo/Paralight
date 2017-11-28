@@ -12,7 +12,7 @@ int main() {
     puts("I am alive !");
 
     try {
-        App app("Paralight");
+        App app;
         app.Run();
     }
 #ifdef __CL_ENABLE_EXCEPTIONS

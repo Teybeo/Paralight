@@ -12,9 +12,9 @@ class Window {
 public:
 
     Window();
-    Window(std::string title, int width, int height, int x = 300);
+    Window(std::string title, int width, int height);
 
-    SDL_Window *getSDL_window() const {
+    SDL_Window *GetSDL_window() const {
         return sdl_window;
     }
 

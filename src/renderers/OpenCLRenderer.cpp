@@ -98,17 +98,15 @@ OpenCLRenderer::~OpenCLRenderer() {
     cout << "OpenCL Renderer destructor called" << endl;
 }
 
-void OpenCLRenderer::Draw() {
-
-    SDL_Surface* surface = SDL_GetWindowSurface(window);
-    Uint32* pixels = (Uint32*) surface->pixels;
-    size_t width = (size_t) surface->w;
-    size_t height = (size_t) surface->h;
+void OpenCLRenderer::Render() {
+    
+    size_t width = (size_t) film_width;
+    size_t height = (size_t) film_height;
 
     queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height));
 //    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height), cl::NDRange(8, 4));
 //    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height), cl::NDRange(8, 8));
-    queue.enqueueReadBuffer(texture, CL_TRUE, 0, sizeof(Uint32) * width * height, pixels);
+    queue.enqueueReadBuffer(texture, CL_TRUE, 0, sizeof(Uint32) * width * height, pixels.data());
 }
 
 void OpenCLRenderer::TracePixel(int x, int y, bool picking) {

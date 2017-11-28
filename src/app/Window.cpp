@@ -5,13 +5,13 @@
 #include <SDL_render.h>
 #include <SDL_hints.h>
 
-Window::Window(std::string title, int width, int height, int x) : width(width), height(height) {
+Window::Window(std::string title, int width, int height) : width(width), height(height) {
 
     Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-    sdl_window = SDL_CreateWindow(title.c_str(), x, SDL_WINDOWPOS_CENTERED, width, height, flags);
+    sdl_window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
 
     if (sdl_window == nullptr) {
         std::cout << "Error creating window\n";

@@ -7,6 +7,7 @@
 #include <SDL_timer.h>
 #include <iostream>
 #include <ctime>
+#include <SDL_opengl.h>
 
 #define DUMP_VAR(x) cout << #x ": " << x << '\n';
 
@@ -19,6 +20,15 @@ using std::unique_ptr;
 BaseRenderer::BaseRenderer(Scene* scene, SDL_Window* window, CameraControls* const controls, Options* options)
         : scene{scene}, window{window}, camera_controls{controls}, options{options} {
     camera_controls->SetSpeed(scene->debug_scale);
+    pixels = std::vector<uint32_t>(film_width * film_height);
+    
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 BaseRenderer::~BaseRenderer() {
@@ -49,7 +59,7 @@ void BaseRenderer::Update() {
     if (CLEAR_ACCUM_BIT == 0) {
         last_clear_timestamp = SDL_GetTicks() / 1000.f;
     }
-
+    
     TriMesh::ClearCounters();
     BVH2::ResetCounters();
 //TODO: Move this to Scene
@@ -69,6 +79,43 @@ void BaseRenderer::Update() {
 //
 //    time += .5f;
 //    CLEAR_ACCUM_BIT = 0;
+}
+
+void BaseRenderer::DrawTexture() {
+    
+    int window_width, window_height;
+    SDL_GetWindowSize(window, &window_width, &window_height);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, film_width, film_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pixels.data());
+    
+    glClearColor(0.17, 0.17, 0.17, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_TEXTURE_2D);
+    
+    int x = (window_width - film_width) / 2;
+    int y = (window_height - film_height) / 2;
+    glViewport(x, y, film_width, film_height);
+    
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0f, 1, 1, 0.0f, -1.0f, +1.0f);
+    glPushMatrix();
+    
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glPushMatrix();
+
+    // Draw a textured quad
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex2i(0, 0);
+    glTexCoord2f(0, 1); glVertex2i(0, 1);
+    glTexCoord2f(1, 1); glVertex2i(1, 1);
+    glTexCoord2f(1, 0); glVertex2i(1, 0);
+    glEnd();
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void BaseRenderer::DrawFrametime() {

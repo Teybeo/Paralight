@@ -24,6 +24,10 @@ protected:
     SDL_Window* window;
     CameraControls* camera_controls;
     Options* options;
+    std::vector<uint32_t> pixels;
+    unsigned int texture;
+    int film_width = 512;
+    int film_height = film_width;
     bool CLEAR_ACCUM_BIT = 0;
     short frame_number = 0;
     float last_clear_timestamp = 0;
@@ -38,7 +42,7 @@ public:
 
     BaseRenderer(Scene* scene, SDL_Window* pWindow, CameraControls* pControls, Options* pOptions);
 
-    virtual void Draw() = 0;
+    virtual void Render() = 0;
 
     virtual void TracePixel(Sint32 x, Sint32 y, bool picking) = 0;
 
@@ -53,6 +57,9 @@ public:
     }
 
     void DumpScreenshot();
+    
+    void DrawTexture();
+    
 };
 
 

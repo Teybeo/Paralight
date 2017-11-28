@@ -39,11 +39,7 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
     envmap_index = GetEnvMapIndex(scene->env_map->path, envmap_array);
 
     model_array = GetModelArray(model_dir);
-
-    int w, h;
-    SDL_GetWindowSize(window, &w, &h);
-    window_size = ImVec2 {w * 0.9f, h * 0.9f};
-
+    
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 5));
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5, 5));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
@@ -53,11 +49,22 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
     );
 
     window_flags = 0;
-    window_flags |= ImGuiWindowFlags_NoTitleBar;
-    window_flags |= ImGuiWindowFlags_NoResize;
+//    window_flags |= ImGuiWindowFlags_NoTitleBar;
+//    window_flags |= ImGuiWindowFlags_NoResize;
     window_flags |= ImGuiWindowFlags_NoSavedSettings;
-    window_flags |= ImGuiWindowFlags_NoMove;
-
+//    window_flags |= ImGuiWindowFlags_NoMove;
+    
+    int w, h;
+    SDL_GetWindowSize(window, &w, &h);
+    sdl_window_size = Vec3 {float(w), float(h)};
+    
+    cout << sdl_window_size << endl;
+    
+    Vec3 window_size = sdl_window_size * 0.3 * Vec3 {1.f, 16 / 9.f};
+    
+    ImGui::SetNextWindowPos(sdl_window_size - window_size);
+    ImGui::SetNextWindowSize(window_size);
+    
     OpenCLRenderer* cl_renderer = dynamic_cast<OpenCLRenderer*>(renderer);
     if (cl_renderer != nullptr) {
         selected_device   = cl_renderer->getCurrentDeviceIndex();
@@ -69,16 +76,26 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
 }
 
 void GUI::Draw() {
-
-    int w, h;
-    SDL_GetWindowSize(window, &w, &h);
-    window_size = ImVec2 {w * 0.9f, h * 0.9f};
-
+    
     ImGui_ImplSdl_NewFrame(window);
-
-    ImGui::SetNextWindowPosCenter();
-    ImGui::SetNextWindowSize(window_size);
-
+    
+    static bool first_frame = true;
+    if (first_frame) {
+        int w, h;
+        SDL_GetWindowSize(window, &w, &h);
+        sdl_window_size = Vec3 {float(w), float(h)};
+        
+        cout << sdl_window_size << endl;
+        
+        Vec3 window_size = sdl_window_size * 0.35 * Vec3 {1.f, 16 / 9.f};
+        Vec3 window_pos = (sdl_window_size - window_size) * Vec3 {0.95, 0.5};
+        
+        ImGui::SetNextWindowPos(window_pos);
+        ImGui::SetNextWindowSize(window_size);
+        first_frame = false;
+    }
+    
+    
     ImGui::Begin("Settings", nullptr, window_flags);
     {
         showRendererSettings();
@@ -91,12 +108,7 @@ void GUI::Draw() {
     ImGui::End();
 
     // Rendering
-    glViewport(0, 0, (int)ImGui::GetIO().DisplaySize.x, (int)ImGui::GetIO().DisplaySize.y);
-    const Vec3 clear_color {0.2, 0.2, 0.2};
-    glClearColor(clear_color.x, clear_color.y, clear_color.z, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
     ImGui::Render();
-    SDL_GL_SwapWindow(window);
 }
 
 void GUI::Update() {

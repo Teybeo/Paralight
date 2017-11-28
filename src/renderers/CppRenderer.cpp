@@ -37,14 +37,16 @@ CppRenderer::~CppRenderer() {
     delete[] accum_texture;
 };
 
-void CppRenderer::Draw() {
+void CppRenderer::Render() {
 
-    SDL_Surface* surface = SDL_GetWindowSurface(window);
-    Uint32* pixels = (Uint32*) surface->pixels;
+//    SDL_Surface* surface = SDL_GetWindowSurface(window);
+//    Uint32* pixels = (Uint32*) surface->pixels;
 
-    int width = surface->w;
-    int height = surface->h;
-    float ratio = (float) width / height;
+//    int width = surface->w;
+//    int height = surface->h;
+    
+    
+    float ratio = (float) film_width / film_height;
     float fov_factor = tanf((float) ((fov / 2.f) * (M_PI / 180)));
 
     bool debug_pixel = false;
@@ -55,11 +57,11 @@ void CppRenderer::Draw() {
     #else
         #pragma message "OpenMP Disabled for C++"
     #endif
-    for (int y = 0; y < height; ++y) {
+    for (int y = 0; y < film_height; ++y) {
 
-        for (int x = 0; x < width; ++x) {
+        for (int x = 0; x < film_width; ++x) {
 
-            Ray ray{camera_controls->GetPosition(), x, y, width, height, ratio, fov_factor};
+            Ray ray{camera_controls->GetPosition(), x, y, film_width, film_height, ratio, fov_factor};
             ray.direction = camera_controls->GetRotation() * ray.direction;
             Vec3 pixel;
 #ifndef INNER_LOOP
@@ -70,10 +72,10 @@ void CppRenderer::Draw() {
 #else
             pixel += Raytrace(ray);
 #endif
-            accum_texture[y * width + x] *= CLEAR_ACCUM_BIT;
-            accum_texture[y * width + x] += pixel;
+            accum_texture[y * film_width + x] *= CLEAR_ACCUM_BIT;
+            accum_texture[y * film_width + x] += pixel;
 
-            pixel = accum_texture[y * width + x] / frame_number;
+            pixel = accum_texture[y * film_width + x] / frame_number;
 
 //            pixel = env_map->Sample(float(x) / width, float(y) / height);
 
@@ -82,10 +84,10 @@ void CppRenderer::Draw() {
             pixel = pixel.pow(1.f / 2.2f);
             pixel *= 255;
 
-            pixels[y * width + x] = SDL_MapRGB(surface->format, (Uint8) pixel.x, (Uint8) pixel.y, (Uint8) pixel.z);
+//            pixels[y * width + x] = SDL_MapRGB(surface->format, (Uint8) pixel.x, (Uint8) pixel.y, (Uint8) pixel.z);
 //
-//            pixels[y * width + x] = 0;
-//            pixels[y * width + x] |= (Uint32) (((Uint8)pixel.x << 16) | ((Uint8)pixel.y << 8) | ((Uint8)pixel.z << 0));
+            pixels[y * film_width + x] = 0;
+            pixels[y * film_width + x] |= (Uint32) (((Uint8)pixel.x << 16) | ((Uint8)pixel.y << 8) | ((Uint8)pixel.z << 0));
         }
     }
 
