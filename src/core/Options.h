@@ -19,6 +19,7 @@ public:
     bool relevant_key_event_captured = false;
     Vec3 background_color {0.18, 0.18, 0.36};
     int depth_target = 0;
+    int fov = 70;
     bool debug = false;
     bool use_bvh = true;
 

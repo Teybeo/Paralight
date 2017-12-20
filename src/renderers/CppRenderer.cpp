@@ -42,7 +42,7 @@ void CppRenderer::Render() {
     BaseRenderer::Render();
 
     float ratio = (float) film_width / film_height;
-    float fov_factor = tanf((float) ((fov / 2.f) * (M_PI / 180)));
+    float fov_factor = tanf(DEG_TO_RAD(options->fov / 2.f));
 
     bool debug_pixel = false;
     
@@ -306,7 +306,7 @@ void CppRenderer::TracePixel(int x, int y, bool picking) {
     int height = surface->h;
 
     float ratio = (float) width / height;
-    float fov_factor = tanf((float) ((fov / 2.f) * (M_PI / 180)));
+    float fov_factor = tanf(DEG_TO_RAD(options->fov / 2.f));
 
     Ray ray{camera_controls->GetPosition(), x, y, width, height, ratio, fov_factor};
     ray.direction = camera_controls->GetRotation() * ray.direction;

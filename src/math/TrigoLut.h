@@ -5,10 +5,14 @@
 
 //#define USE_TRIGO_LOOKUP
 
-#define M_PI           3.14159265358979323846264338327950288
-#define M_PI_F (float)(3.14159265358979323846264338327950288)
+#define M_PI    3.14159265358979323846264338327950288
+#define M_PI_F  3.14159265358979323846264338327950288f
+
 #define M_INV_PI (1.f / M_PI_F)
 #define TAU      (2.f * M_PI_F)
+
+#define DEG_TO_RAD(x) ((x) * (M_PI_F / 180.f))
+#define RAD_TO_DEG(x) ((x) * (180.f / M_PI_F))
 
 #define COS_LUT_LENGTH  (1 << 10)
 #define SIN_LUT_LENGTH  (1 << 10)

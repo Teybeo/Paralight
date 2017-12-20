@@ -22,7 +22,6 @@ public:
 
 protected:
     Scene* scene;
-    int fov = 70;
     SDL_Window* window;
     CameraControls* camera_controls;
     Options* options;

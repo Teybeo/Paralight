@@ -77,13 +77,7 @@ OpenCLRenderer::OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls
 
     CreateSceneBuffers(scene);
     CreateEnvMapImage(scene->env_map);
-
-    std::map<string, char>();
-
-    clOptions.fov = tanf((float) ((fov / 2.f) * (M_PI / 180)));
-
-    DUMP_SIZE(CLNode2)
-
+    
     CreateRenderKernel(program.prog);
 
 //    string name = "base";
@@ -386,6 +380,7 @@ void OpenCLRenderer::UpdateOptionsBuffer() {
     clOptions.debug                    = debug;
     clOptions.accum_clear_bit          = CLEAR_ACCUM_BIT;
     clOptions.frame_number             = frame_number;
+    clOptions.fov                      = tanf(DEG_TO_RAD(options->fov / 2.f));
     clOptions.origin                   = camera_controls->GetPosition();
     clOptions.rotation                 = camera_controls->GetRotation();
 

@@ -56,8 +56,8 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
 //    window_flags |= ImGuiWindowFlags_NoResize;
     window_flags |= ImGuiWindowFlags_NoSavedSettings;
 //    window_flags |= ImGuiWindowFlags_NoMove;
-    
-    OpenCLRenderer* cl_renderer = dynamic_cast<OpenCLRenderer*>(renderer);
+
+    auto* cl_renderer = dynamic_cast<OpenCLRenderer*>(renderer);
     if (cl_renderer != nullptr) {
         selected_device   = cl_renderer->getCurrentDeviceIndex();
         selected_platform = cl_renderer->getCurrentPlatformIndex();
@@ -262,7 +262,15 @@ void GUI::showLightingSettings() {
                 options_has_changed = true;
             }
         }
-        ImGui::PopItemWidth();;
+        ImGui::PopItemWidth();
+
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() * 0.45f);
+        float fov_temp = DEG_TO_RAD(options->fov);
+        if (ImGui::SliderAngle("Field of view", &fov_temp, 0, 180)) {
+            options->fov = static_cast<int>(RAD_TO_DEG(fov_temp));
+            options_has_changed = true;
+        }
+        ImGui::PopItemWidth();
         
         options_has_changed |= ImGui::Checkbox("Tonemapping", &options->use_tonemapping);
         options_has_changed |= ImGui::Checkbox("Emissive lighting", &options->use_emissive_lighting);
