@@ -54,6 +54,7 @@ set(SOURCE_FILES ${SOURCE_FILES}
         gui/imgui/imgui.cpp
         gui/imgui/imgui_impl_sdl.cpp
         gui/imgui/imgui_draw.cpp
+        gui/imgui/imgui_plot_var.cpp
         )
 
 #set(SOURCE_FILES ${SOURCE_FILES}

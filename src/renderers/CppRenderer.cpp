@@ -39,18 +39,13 @@ CppRenderer::~CppRenderer() {
 
 void CppRenderer::Render() {
 
-//    SDL_Surface* surface = SDL_GetWindowSurface(window);
-//    Uint32* pixels = (Uint32*) surface->pixels;
+    BaseRenderer::Render();
 
-//    int width = surface->w;
-//    int height = surface->h;
-    
-    
     float ratio = (float) film_width / film_height;
     float fov_factor = tanf((float) ((fov / 2.f) * (M_PI / 180)));
 
     bool debug_pixel = false;
-
+    
     #if defined(USE_OPENMP) && not defined(DEBUG_BUILD)
         #pragma message "OpenMP Enabled for C++"
     #pragma omp parallel for schedule(dynamic, 1)

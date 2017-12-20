@@ -1,6 +1,8 @@
 #ifndef BASERENDERER_H
 #define BASERENDERER_H
 
+#include <chrono>
+#include <app/Chronometer.h>
 #include "core/Scene.h"
 #include "core/CameraControls.h"
 #include "core/Options.h"
@@ -28,9 +30,9 @@ protected:
     unsigned int texture;
     int film_width = 512;
     int film_height = film_width;
-    bool CLEAR_ACCUM_BIT = 0;
+    bool CLEAR_ACCUM_BIT = false;
     short frame_number = 0;
-    float last_clear_timestamp = 0;
+    Chronometer render_chrono;
     Object3D* selected_object = nullptr;
     bool reset_camera = false;
     bool dump_screenshot = false;
@@ -49,13 +51,19 @@ public:
     virtual void KeyEvent(SDL_Keysym keysym, SDL_EventType param);
 
     virtual void Update();
-
-    void DrawFrametime();
-
+    
     Object3D* GetSelectedObject() {
         return selected_object;
     }
-
+    
+    short GetFrameNumber() const {
+        return frame_number;
+    }
+    
+    float GetRenderTime() const {
+        return render_chrono.GetSeconds();
+    }
+    
     void DumpScreenshot();
     
     void DrawTexture();

@@ -11,8 +11,9 @@ class Chronometer {
     clock::time_point start = clock::now();
 
 public:
-    Chronometer() {}
     
+    Chronometer() = default;
+
     float GetMilliseconds() const {
         auto end = clock::now();
         return std::chrono::duration<float, std::milli>(end - start).count();
@@ -26,6 +27,7 @@ public:
     void Restart() {
         start = clock::now();
     }
+    
 };
 
 

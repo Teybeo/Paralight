@@ -19,7 +19,6 @@ class GUI {
     Options* options;
     SDL_Window* window;
     BaseRenderer*& renderer;
-    Vec3 sdl_window_size;
     ImGuiWindowFlags window_flags;
     int selected_platform;
     int selected_device;

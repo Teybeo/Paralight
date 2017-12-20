@@ -88,7 +88,8 @@ OpenCLRenderer::OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls
 
 //    string name = "base";
 //    program.DumpBinaries(name);
-//    system(("ptx_to_cubin.bat " + name).c_str());
+//    system(("cd ../.. & ptx_res_usage.bat " + name).c_str());
+//    system(("cd ../.. & ptx_to_registers.bat " + name).c_str());
 //    exit(0);
 
     cout << "OpenCL Renderer ready" << endl;
@@ -99,7 +100,9 @@ OpenCLRenderer::~OpenCLRenderer() {
 }
 
 void OpenCLRenderer::Render() {
-    
+
+    BaseRenderer::Render();
+
     size_t width = (size_t) film_width;
     size_t height = (size_t) film_height;
 

@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 list(APPEND COMMON_FLAGS -fopenmp)
 
 # Workaround gcc 7.2 segfault in debug
-list(APPEND COMMON_FLAGS -save-temps)
+#list(APPEND COMMON_FLAGS -save-temps)
 
 set(BUILD_64_BIT "ON")
 set(DEFINITIONS USE_OPENMP)
@@ -25,7 +25,7 @@ else()
     message("Building as 32 Bit")
 endif()
 
-# Custom Debug definition to enable/disable stuff at compile-time
+# Custom Debug macro to enable/disable stuff at compile-time
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG_BUILD")
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 
@@ -118,12 +118,16 @@ find_library(SDL_IMG_LIBRARY
 
 ############ Assimp paths ############
 
-set(ASSIMP_INCLUDE_DIR "D:/Dev/Lib/assimp-3.2/include")
+set(ASSIMP_BASE_DIR "D:/Dev/Lib/assimp-4.1.0")
+
+#set(ASSIMP_INCLUDE_DIR "D:/Dev/Lib/assimp-3.2/include")
 
 if (BUILD_64_BIT)
-    set(ASSIMP_LIB_DIR     "D:/Dev/Lib/assimp-3.2/lib/")
+    set(ASSIMP_INCLUDE_DIR "${ASSIMP_BASE_DIR}/cmake-build-release/include")
+    set(ASSIMP_LIB_DIR     "${ASSIMP_BASE_DIR}/cmake-build-release/code/")
 else()
-    set(ASSIMP_LIB_DIR     "D:/Dev/Lib/assimp-3.2/build/code/")
+    set(ASSIMP_INCLUDE_DIR "D:/Dev/Lib/assimp-master/cmake-build-release/include")
+    set(ASSIMP_LIB_DIR     "D:/Dev/Lib/assimp-master/cmake-build-release/code/")
 endif()
 
 find_library(ASSIMP_LIBRARY

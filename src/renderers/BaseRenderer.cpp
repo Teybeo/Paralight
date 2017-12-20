@@ -56,29 +56,15 @@ void BaseRenderer::Update() {
     frame_number *= CLEAR_ACCUM_BIT;
     frame_number++;
 
-    if (CLEAR_ACCUM_BIT == 0) {
-        last_clear_timestamp = SDL_GetTicks() / 1000.f;
-    }
-    
     TriMesh::ClearCounters();
     BVH2::ResetCounters();
-//TODO: Move this to Scene
-//    frame_number = 1;
-//
-//    static float time = 0;
-//    size_t i = 2;
-//    for (auto& item: objects) {
-//        if (item == objects.front() || i == objects.size() - 1)
-//            continue;
-//
-//        item->pos.y = std::sin(time + 1 * i) * 2.f;
-//        item->pos.z = (-1 + std::cos(time + 1 * i)) * 2.f;
-//
-//        i++;
-//    }
-//
-//    time += .5f;
-//    CLEAR_ACCUM_BIT = 0;
+}
+
+void BaseRenderer::Render() {
+
+    if (frame_number == 1) {
+        render_chrono.Restart();
+    }
 }
 
 void BaseRenderer::DrawTexture() {
@@ -116,26 +102,6 @@ void BaseRenderer::DrawTexture() {
     glEnd();
     
     glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void BaseRenderer::DrawFrametime() {
-
-    static char title[100] = "";
-    static Uint32 last_draw_timestamp = 0;
-
-    // Get CPU time
-    static Chronometer chrono;
-    float duration = chrono.GetMilliseconds();
-    float now = SDL_GetTicks() / 1000.f - last_clear_timestamp;
-
-    // Limit the title bar update rate to 0.1/s to keep it readable and not spam dwm.exe
-    if (fabsf(SDL_GetTicks() - last_draw_timestamp) >= 100) {
-        snprintf(title, sizeof(title), "CPU: %.2f ms, frames: %d, time: %.2f s - spp: %d, bounce: %d", duration, frame_number, now, options->sample_count, options->bounce_cout);
-        SDL_SetWindowTitle(window, title);
-        last_draw_timestamp = SDL_GetTicks();
-    }
-
-    chrono.Restart();
 }
 
 void BaseRenderer::DumpScreenshot() {

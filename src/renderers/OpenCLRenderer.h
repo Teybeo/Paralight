@@ -1,13 +1,14 @@
 #ifndef OPENCL_OPENCLRENDERER_H
 #define OPENCL_OPENCLRENDERER_H
 
-#include <map>
-#include <core/BVH.h>
 #include "BaseRenderer.h"
+#include "core/BVH.h"
 #include "opencl/Program.h"
 #include "opencl/OpenCLPlatformList.h"
-#include "CL/cl.hpp"
 #include "opencl/SceneAdapter.h"
+
+#include "CL/cl.hpp"
+#include <map>
 
 // See render.h for layout/alignement
 struct CLOptions {

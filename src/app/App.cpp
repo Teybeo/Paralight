@@ -47,21 +47,21 @@ void App::Run() {
     } while (is_running);
 }
 
-void App::Draw() {
-    
-    renderer->Render();
-    renderer->DrawTexture();
-    renderer->DrawFrametime();
-    overlay->Draw();
-    
-    SDL_GL_SwapWindow(window.GetSDL_window());
-}
-
 void App::Update() {
+    
     options.Update();
     overlay->Update();
     camera_controls.Update();
     renderer->Update();
+}
+
+void App::Draw() {
+    
+    renderer->Render();
+    renderer->DrawTexture();
+    overlay->Draw();
+    
+    SDL_GL_SwapWindow(window.GetSDL_window());
 }
 
 const char* GetWindowEventString(int code);

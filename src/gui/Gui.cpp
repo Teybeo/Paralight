@@ -7,6 +7,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_plot_var.h"
 
 #include <GL/gl.h>
 #include <iostream>
@@ -21,6 +22,8 @@ vector<string> GetEnvMapArray(const char* env_map_dir);
 std::vector<std::string> GetModelArray(const string& model_dir_path) ;
 
 static void showBVHStatistics() ;
+
+void FirstFrame(SDL_Window *pWindow);
 
 using std::shared_ptr;
 
@@ -54,17 +57,6 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
     window_flags |= ImGuiWindowFlags_NoSavedSettings;
 //    window_flags |= ImGuiWindowFlags_NoMove;
     
-    int w, h;
-    SDL_GetWindowSize(window, &w, &h);
-    sdl_window_size = Vec3 {float(w), float(h)};
-    
-    cout << sdl_window_size << endl;
-    
-    Vec3 window_size = sdl_window_size * 0.3 * Vec3 {1.f, 16 / 9.f};
-    
-    ImGui::SetNextWindowPos(sdl_window_size - window_size);
-    ImGui::SetNextWindowSize(window_size);
-    
     OpenCLRenderer* cl_renderer = dynamic_cast<OpenCLRenderer*>(renderer);
     if (cl_renderer != nullptr) {
         selected_device   = cl_renderer->getCurrentDeviceIndex();
@@ -79,22 +71,7 @@ void GUI::Draw() {
     
     ImGui_ImplSdl_NewFrame(window);
     
-    static bool first_frame = true;
-    if (first_frame) {
-        int w, h;
-        SDL_GetWindowSize(window, &w, &h);
-        sdl_window_size = Vec3 {float(w), float(h)};
-        
-        cout << sdl_window_size << endl;
-        
-        Vec3 window_size = sdl_window_size * 0.35 * Vec3 {1.f, 16 / 9.f};
-        Vec3 window_pos = (sdl_window_size - window_size) * Vec3 {0.95, 0.5};
-        
-        ImGui::SetNextWindowPos(window_pos);
-        ImGui::SetNextWindowSize(window_size);
-        first_frame = false;
-    }
-    
+    FirstFrame(window);
     
     ImGui::Begin("Settings", nullptr, window_flags);
     {
@@ -102,8 +79,23 @@ void GUI::Draw() {
         showLightingSettings();
         showObjectSettings();
 //        ShowBVHTree(scene->bvh);
-        ImGui::Text("Avg %.0f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 //        showBVHStatistics();
+    }
+    ImGui::End();
+    
+    ImGui::Begin("Statistics", nullptr, window_flags);
+    {
+        static Chronometer chrono;
+    
+        float gui_chrono = chrono.GetMilliseconds();
+        chrono.Restart();
+        
+        ImGui::PlotVar("Frametime", gui_chrono, 0, 500);
+        ImGui::Text("Frametime: %.1f ms", 1000.f / ImGui::GetIO().Framerate);
+        ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+        ImGui::Text("Frame count: %d", renderer->GetFrameNumber());
+        ImGui::Text("Render time: %.2f s", renderer->GetRenderTime());
+
     }
     ImGui::End();
 
@@ -204,7 +196,9 @@ void GUI::showLightingSettings() {
 
     if (ImGui::CollapsingHeader("Render settings", nullptr, true, true)) {
 
-        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
+//        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
+//        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() / 1.f);
+        ImGui::PushItemWidth(0);
             int temp_model_index = model_index;
             bool changed = ImGui::Combo("Model", &temp_model_index, item_getter, &model_array, (int) model_array.size());
 
@@ -216,9 +210,10 @@ void GUI::showLightingSettings() {
             }
         ImGui::PopItemWidth();
 
-        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
+//        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
+        ImGui::PushItemWidth(0);
         int temp_envmap_index = envmap_index;
-        ImGui::Combo("Environnement Map", &temp_envmap_index, item_getter, &envmap_array, (int) envmap_array.size());
+        ImGui::Combo("Environnement", &temp_envmap_index, item_getter, &envmap_array, (int) envmap_array.size());
 
         if (temp_envmap_index != envmap_index) {
             envmap_index = temp_envmap_index;
@@ -233,10 +228,42 @@ void GUI::showLightingSettings() {
             options->brdf_bitfield ^= LAMBERTIAN;
             options_has_changed = true;
         }
+        ImGui::SameLine();
         if (ImGui::Checkbox("Microfacet BRDF", &microfacet)) {
             options->brdf_bitfield ^= MICROFACET;
             options_has_changed = true;
         }
+        
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() * 0.45f);
+        int sample_temp = options->sample_count;
+        if (ImGui::InputInt("Sample count", &sample_temp, 1, 1, ImGuiInputTextFlags_CharsDecimal)) {
+            sample_temp = std::max(1, sample_temp);
+            if (sample_temp == options->sample_count + 1) {
+                options->sample_count *= 2;
+                options_has_changed = true;
+            }
+            else if (sample_temp == options->sample_count - 1) {
+                options->sample_count /= 2.f;
+                options_has_changed = true;
+            }
+        }
+        ImGui::PopItemWidth();
+        
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() * 0.45f);
+        int bounce_temp = options->bounce_cout;
+        if (ImGui::InputInt("Bounce count", &bounce_temp, 1, 1, ImGuiInputTextFlags_CharsDecimal)) {
+            bounce_temp = std::max(1, bounce_temp);
+            if (bounce_temp == options->bounce_cout + 1) {
+                options->bounce_cout *= 2;
+                options_has_changed = true;
+            }
+            else if (bounce_temp == options->bounce_cout - 1) {
+                options->bounce_cout /= 2.f;
+                options_has_changed = true;
+            }
+        }
+        ImGui::PopItemWidth();;
+        
         options_has_changed |= ImGui::Checkbox("Tonemapping", &options->use_tonemapping);
         options_has_changed |= ImGui::Checkbox("Emissive lighting", &options->use_emissive_lighting);
         options_has_changed |= ImGui::Checkbox("Distant Environnment lighting", &options->use_distant_env_lighting);
@@ -529,3 +556,22 @@ static void showBVHStatistics() {
     ImGui::Text("Object Tests Success Rate: %.2f K (%g %%)", BVH2::ray_obj_hit_count / 1000.f, BVH2::ray_obj_hit_count / float(BVH2::ray_obj_test_count) * 100);
 }
 
+void FirstFrame(SDL_Window *window) {
+    
+    int w, h;
+    SDL_GetWindowSize(window, &w, &h);
+    Vec3 sdl_window_size {float(w), float(h)};
+    
+    Vec3 settings_size = sdl_window_size * Vec3 {0.25, 0.7};
+    Vec3 settings_pos = (sdl_window_size - settings_size) * Vec3 {0.975, 0.5};
+    
+    Vec3 stats_size {settings_size.x, 0};
+    Vec3 stats_pos {sdl_window_size.x * 0.025f, settings_pos.y};
+    
+    ImGui::SetWindowPos("Settings", settings_pos, ImGuiCond_Once);
+    ImGui::SetWindowSize("Settings", settings_size, ImGuiCond_Once);
+    
+    ImGui::SetWindowPos("Statistics", stats_pos, ImGuiCond_Once);
+    ImGui::SetWindowSize("Statistics", stats_size, ImGuiCond_Once);
+    
+}
