@@ -8,27 +8,25 @@
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_plot_var.h"
+#include "imgui/imconfig.h"
 
 #include <GL/gl.h>
 #include <iostream>
+#include <SDL_opengl.h>
 #include "tinydir/tinydir.h"
 
+using std::shared_ptr;
 using std::string;
 using std::vector;
 
 int GetEnvMapIndex(const string& env_map, vector<string> env_map_array);
 vector<string> GetEnvMapArray(const char* env_map_dir);
-
-std::vector<std::string> GetModelArray(const string& model_dir_path) ;
-
-static void showBVHStatistics() ;
-
+std::vector<std::string> GetModelArray(const string& model_dir_path);
+static void ShowBVHStatistics();
 void FirstFrame(SDL_Window *pWindow);
 
-using std::shared_ptr;
-
-GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* scene) :
-    scene{scene}, options(options), window{window}, renderer(renderer)
+GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* scene, CameraControls* controls) :
+    scene{scene}, options(options), window{window}, renderer(renderer), controls(controls)
 {
     // Setup ImGui binding
     ImGui_ImplSdl_Init(window);
@@ -46,6 +44,8 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 5));
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5, 5));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.06f, 0.06f, 0.06f, 0.8f));
     ImGui::SetColorEditOptions(
             ImGuiColorEditFlags_Float
             | ImGuiColorEditFlags_RGB
@@ -55,6 +55,7 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
 //    window_flags |= ImGuiWindowFlags_NoTitleBar;
 //    window_flags |= ImGuiWindowFlags_NoResize;
     window_flags |= ImGuiWindowFlags_NoSavedSettings;
+    window_flags |= ImGuiWindowFlags_NoCollapse;
 //    window_flags |= ImGuiWindowFlags_NoMove;
 
     auto* cl_renderer = dynamic_cast<OpenCLRenderer*>(renderer);
@@ -72,30 +73,54 @@ void GUI::Draw() {
     ImGui_ImplSdl_NewFrame(window);
     
     FirstFrame(window);
-    
-    ImGui::Begin("Settings", nullptr, window_flags);
+
+    ShowAppMenuBar();
+
+    if (is_settings_opened)
     {
-        showRendererSettings();
-        showLightingSettings();
-        showObjectSettings();
+    ImGui::Begin("Settings", &is_settings_opened, window_flags);
+        ShowRendererSettings();
+        ShowLightingSettings();
+        ShowObjectSettings();
 //        ShowBVHTree(scene->bvh);
-//        showBVHStatistics();
-    }
+//        ShowBVHStatistics();
     ImGui::End();
-    
-    ImGui::Begin("Statistics", nullptr, window_flags);
+    }
+
+    if (is_stats_opened)
     {
+    ImGui::Begin("Statistics", &is_stats_opened, window_flags);
         static Chronometer chrono;
-    
+
         float gui_chrono = chrono.GetMilliseconds();
         chrono.Restart();
-        
+
         ImGui::PlotVar("Frametime", gui_chrono, 0, 500);
         ImGui::Text("Frametime: %.1f ms", 1000.f / ImGui::GetIO().Framerate);
         ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
         ImGui::Text("Frame count: %d", renderer->GetFrameNumber());
         ImGui::Text("Render time: %.2f s", renderer->GetRenderTime());
 
+    ImGui::End();
+    }
+
+    // Width > 100, Height > 100
+    ImGui::SetNextWindowSizeConstraints(ImVec2(100, 100), ImVec2(FLT_MAX, FLT_MAX));
+    ImGui::Begin("Image", nullptr, window_flags | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+    {
+        void* tex_id = reinterpret_cast<void*>(renderer->GetFilmTexture());
+        Vec3 content_region = ImGui::GetContentRegionAvail();
+        Vec3 image_size = content_region.min2D();
+        renderer->SetFilmDisplaySize(image_size);
+
+        Vec3 cursor_pos = ImGui::GetCursorPos();
+        cursor_pos += (content_region - image_size) / 2.f;
+        cursor_pos.x = roundf(cursor_pos.x);
+        cursor_pos.y = roundf(cursor_pos.y);
+        ImGui::SetCursorPos(cursor_pos);
+        
+        // ImageButton to prevent moving the window by clicking on it
+        ImGui::ImageButton(tex_id, image_size, Vec3{0}, Vec3{1}, 0);
     }
     ImGui::End();
 
@@ -114,7 +139,7 @@ void GUI::Update() {
     options_has_changed = false;
 }
 
-void GUI::showRendererSettings() {
+void GUI::ShowRendererSettings() {
 
     if (ImGui::CollapsingHeader("Renderer", nullptr, true, true)) {
         bool is_opencl = (typeid(*renderer) == typeid(OpenCLRenderer));
@@ -131,12 +156,12 @@ void GUI::showRendererSettings() {
             SDL_PushEvent(&event);
         }
         if (is_opencl == true) {
-            showOpenCLSettings();
+            ShowOpenCLSettings();
         }
     }
 }
 
-void GUI::showOpenCLSettings() {
+void GUI::ShowOpenCLSettings() {
 
     if (ImGui::TreeNode("Platform/Device selection")) {
 
@@ -189,7 +214,7 @@ bool item_getter(void* data, int current_index, const char** name) {
     return true;
 }
 
-void GUI::showLightingSettings() {
+void GUI::ShowLightingSettings() {
 
     scene->envmap_has_changed = false;
     scene->model_has_changed = false;
@@ -206,6 +231,7 @@ void GUI::showLightingSettings() {
                 model_index = temp_model_index;
                 scene->Clear();
                 scene->LoadObjects(model_array[model_index]);
+                controls->SetSpeed(scene->debug_scale);
                 scene->model_has_changed = true;
             }
         ImGui::PopItemWidth();
@@ -270,9 +296,21 @@ void GUI::showLightingSettings() {
             options->fov = static_cast<int>(RAD_TO_DEG(fov_temp));
             options_has_changed = true;
         }
+
+        float render_scale = 100.f * renderer->GetFilmRenderScale();
+        if (ImGui::SliderFloat("Render scale", &render_scale, 10, 200, "%.0f %%")) {
+            renderer->SetFilmRenderScale(roundf(render_scale) / 100.f);
+            options_has_changed = true;
+        }
+
+        Vec3 size = renderer->GetFilmSize() * renderer->GetFilmRenderScale();
+        ImGui::Text("Render size: %g x %g", size.x, size.y);
+        size = renderer->GetFilmDisplaySize();
+        ImGui::Text("Display size: %g x %g", size.x, size.y);
+
         ImGui::PopItemWidth();
-        
-        options_has_changed |= ImGui::Checkbox("Tonemapping", &options->use_tonemapping);
+
+        ImGui::Checkbox("Tonemapping", &options->use_tonemapping);
         options_has_changed |= ImGui::Checkbox("Emissive lighting", &options->use_emissive_lighting);
         options_has_changed |= ImGui::Checkbox("Distant Environnment lighting", &options->use_distant_env_lighting);
 //        options_has_changed |= ImGui::Checkbox("Debug", &renderer->debug);
@@ -283,19 +321,20 @@ void GUI::showLightingSettings() {
 
 }
 
-void GUI::showObjectSettings() {
+void GUI::ShowObjectSettings() {
 
     if (ImGui::CollapsingHeader("Object settings", nullptr, true, true)) {
 
         Object3D* object = renderer->GetSelectedObject();
+        ImGui::LabelText("Selected obj adress", "%p\n", object);
         if (object == nullptr)
             return;
 
-        showMaterialSettings(object);
+        ShowMaterialSettings(object);
     }
 }
 
-void GUI::showMaterialSettings(Object3D* object) {
+void GUI::ShowMaterialSettings(Object3D* object) {
 
     scene->material_has_changed = false;
     scene->emission_has_changed = false;
@@ -319,27 +358,27 @@ void GUI::showMaterialSettings(Object3D* object) {
 
     OldMaterial* standard = dynamic_cast<OldMaterial*>(object->material);
     if (standard != nullptr) {
-        showTextureSettings(standard->GetAlbedo(), "Albedo");
-        showTextureSettings(standard->GetRoughness(), "Roughness");
-        showTextureSettings(standard->GetReflectance(), "Reflectance");
-        showTextureSettings(standard->GetNormal(), "Normal");
+        ShowTextureSettings(standard->GetAlbedo(), "Albedo");
+        ShowTextureSettings(standard->GetRoughness(), "Roughness");
+        ShowTextureSettings(standard->GetReflectance(), "Reflectance");
+        ShowTextureSettings(standard->GetNormal(), "Normal");
     }
     
     MetallicWorkflow* metallic_workflow = dynamic_cast<MetallicWorkflow*>(object->material);
     if (metallic_workflow != nullptr) {
-        showTextureSettings(metallic_workflow->GetAlbedo(), "Albedo");
-        showTextureSettings(metallic_workflow->GetRoughness(), "Roughness");
-        showTextureSettings(metallic_workflow->GetMetallic(), "Metalness");
-        showTextureSettings(metallic_workflow->GetNormal(), "Normal");
+        ShowTextureSettings(metallic_workflow->GetAlbedo(), "Albedo");
+        ShowTextureSettings(metallic_workflow->GetRoughness(), "Roughness");
+        ShowTextureSettings(metallic_workflow->GetMetallic(), "Metalness");
+        ShowTextureSettings(metallic_workflow->GetNormal(), "Normal");
     }
 
     LambertianMaterial* lambertian = dynamic_cast<LambertianMaterial*>(object->material);
     if (lambertian != nullptr) {
-        showTextureSettings(lambertian->GetAlbedo(), "Albedo");
+        ShowTextureSettings(lambertian->GetAlbedo(), "Albedo");
     }
 }
 
-void GUI::showTextureSettings(std::shared_ptr<Texture> texture, const char* texture_name) {
+void GUI::ShowTextureSettings(std::shared_ptr<Texture> texture, const char* texture_name) {
     
     ValueTex3f* scalar_tex = dynamic_cast<ValueTex3f*>(texture.get());
 
@@ -404,7 +443,7 @@ std::vector<std::string> GetModelArray(const string& model_dir_path) {
             const auto& sub_array = GetModelArray(string(file.path) + "/");
             model_array.insert(model_array.end(), sub_array.begin(), sub_array.end());
         }
-        else if (strcmp(file.extension, "obj") == 0) {
+        else if (strcmp(file.extension, "gltf") == 0) {
             model_array.push_back(model_dir_path + file.name);
         }
 
@@ -554,7 +593,7 @@ static void ShowBVHTree(const BVH& bvh)
     }
 }
 
-static void showBVHStatistics() {
+static void ShowBVHStatistics() {
     ImGui::Text("BBox Tests: %.2f K", BVH2::ray_bbox_test_count / 1000.f);
     ImGui::Text("Object Tests: %.2f K", BVH2::ray_obj_test_count / 1000.f);
 
@@ -570,16 +609,62 @@ void FirstFrame(SDL_Window *window) {
     SDL_GetWindowSize(window, &w, &h);
     Vec3 sdl_window_size {float(w), float(h)};
     
-    Vec3 settings_size = sdl_window_size * Vec3 {0.25, 0.7};
+    Vec3 settings_size = sdl_window_size * Vec3 {0.25, 0.75};
     Vec3 settings_pos = (sdl_window_size - settings_size) * Vec3 {0.975, 0.5};
     
     Vec3 stats_size {settings_size.x, 0};
     Vec3 stats_pos {sdl_window_size.x * 0.025f, settings_pos.y};
-    
+
+    Vec3 image_size {sdl_window_size.min2D() * 0.75f};
+    Vec3 image_pos {0.5f * (sdl_window_size - image_size)};
+
     ImGui::SetWindowPos("Settings", settings_pos, ImGuiCond_Once);
     ImGui::SetWindowSize("Settings", settings_size, ImGuiCond_Once);
     
     ImGui::SetWindowPos("Statistics", stats_pos, ImGuiCond_Once);
     ImGui::SetWindowSize("Statistics", stats_size, ImGuiCond_Once);
-    
+
+    ImGui::SetWindowSize("Image", image_size, ImGuiCond_Once);
+    ImGui::SetWindowPos("Image", image_pos, ImGuiCond_Once);
+
+}
+
+void GUI::ShowAppMenuBar()
+{
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+//            ShowExampleMenuFile();
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("View"))
+        {
+            ImGui::MenuItem("Settings", nullptr, &is_settings_opened);
+            ImGui::MenuItem("Statistics", nullptr, &is_stats_opened);
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+}
+
+bool GUI::ProcessEvent(SDL_Event* event) {
+
+    ImGui_ImplSdl_ProcessEvent(event);
+
+    if (event->type == SDL_MOUSEBUTTONUP) {
+
+    }
+    return false;
+}
+
+//TODO:Remove if unused
+bool MouseClickedOnWindow(int x, int y, const char* name) {
+
+    ImGuiWindow* window = ImGui::FindWindowByName(name);
+
+    Vec3 min = window->Pos;
+    Vec3 max = window->Size.operator::Vec3() + min;
+
+    return (x > min.x && x < max.x && y > min.y && y < max.y);
 }

@@ -72,6 +72,7 @@ void render(global uchar4* framebuffer, global float4* accum_buffer, global Node
     pixel *= 255;
 
     framebuffer[x + y * w].zyx = convert_uchar3_sat(pixel);
+    framebuffer[x + y * w].w = 255;
 }
 
 float3 Trace(Ray ray, global Node2* bvh_root, global Object3D* objects, VERTEX_DATA_ARGS, global Brdf* brdfs, constant Options* options, read_only image2d_t env_map, global char* texture_array, global TextureInfo* info_array, RNG_SEED_ARGS) {

@@ -24,10 +24,10 @@ BaseRenderer::BaseRenderer(Scene* scene, SDL_Window* window, CameraControls* con
     
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -68,21 +68,24 @@ void BaseRenderer::Render() {
 }
 
 void BaseRenderer::DrawTexture() {
-    
+
     int window_width, window_height;
     SDL_GetWindowSize(window, &window_width, &window_height);
 
+    int film_width = static_cast<int>(this->film_width * film_render_scale);
+    int film_height = static_cast<int>(this->film_height * film_render_scale);
+
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, film_width, film_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pixels.data());
-    
+
     glClearColor(0.17, 0.17, 0.17, 0);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
     
-    int x = (window_width - film_width) / 2;
-    int y = (window_height - film_height) / 2;
-    glViewport(x, y, film_width, film_height);
+    int x = (window_width - this->film_width) / 2;
+    int y = (window_height - this->film_height) / 2;
+    glViewport(x, y, this->film_width, this->film_height);
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();

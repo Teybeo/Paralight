@@ -33,7 +33,7 @@ App::App() {
 //    renderer = new CppRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
     renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
 
-    overlay = new GUI {&options, window.GetSDL_window(), renderer, &scene};
+    overlay = new GUI {&options, window.GetSDL_window(), renderer, &scene, &camera_controls};
 
     is_running = true;
 }
@@ -68,9 +68,10 @@ const char* GetWindowEventString(int code);
 
 void App::Event() {
 
-    SDL_Event ev;
+    SDL_Event ev = {};
     while (SDL_PollEvent(&ev)) {
-        ImGui_ImplSdl_ProcessEvent(&ev);
+        if (overlay->ProcessEvent(&ev))
+            continue;
 
         switch (ev.type) {
             case SDL_QUIT:

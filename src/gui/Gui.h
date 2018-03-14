@@ -4,6 +4,7 @@
 #include <math/Vec3.h>
 #include <memory>
 #include <vector>
+#include <core/CameraControls.h>
 
 typedef struct SDL_Window SDL_Window;
 typedef struct BaseRenderer BaseRenderer;
@@ -19,6 +20,7 @@ class GUI {
     Options* options;
     SDL_Window* window;
     BaseRenderer*& renderer;
+    CameraControls* controls;
     ImGuiWindowFlags window_flags;
     int selected_platform;
     int selected_device;
@@ -29,21 +31,25 @@ class GUI {
     int envmap_index = 0;
     int model_index = 0;
     bool options_has_changed = false;
+    bool is_settings_opened = true;
+    bool is_stats_opened = true;
 
-    void showRendererSettings();
-    void showOpenCLSettings();
-    void showLightingSettings();
-    void showObjectSettings();
-    void showMaterialSettings(Object3D* object);
-    void showTextureSettings(std::shared_ptr<Texture> texture, const char* texture_name);
+    void ShowRendererSettings();
+    void ShowOpenCLSettings();
+    void ShowLightingSettings();
+    void ShowObjectSettings();
+    void ShowMaterialSettings(Object3D* object);
+    void ShowTextureSettings(std::shared_ptr<Texture> texture, const char* texture_name);
+    void ShowAppMenuBar();
 
 public:
 
     GUI() = delete;
-    GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer_name, Scene* scene);
+    GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* scene, CameraControls* controls);
 
     void Draw();
     void Update();
+    bool ProcessEvent(SDL_Event* event);
 };
 
 

@@ -250,6 +250,10 @@ public:
         return std::min(x, std::min(y, z));
     }
 
+    float min2D() const {
+        return std::min(x, y);
+    }
+
     Vec3 abs() const {
         return Vec3{fabsf(x), fabsf(y), fabsf(z)};
     }
@@ -294,7 +298,6 @@ public:
 
         return Vec3{u, v, 0};
     }
-    
 };
 
 inline Vec3 operator*(Vec3 vec, float scalar) {

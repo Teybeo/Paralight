@@ -30,7 +30,7 @@ public:
 
     float yz_angle = 0;
     float xz_angle = 0;
-    Vec3 cam_pos {0, 0, 10};
+    Vec3 cam_pos {0, 0, 1};
     float debug_scale = 1;
     bool material_has_changed = false;
     bool envmap_has_changed = false;

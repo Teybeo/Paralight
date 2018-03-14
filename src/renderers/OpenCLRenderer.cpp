@@ -77,7 +77,7 @@ OpenCLRenderer::OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls
 
     CreateSceneBuffers(scene);
     CreateEnvMapImage(scene->env_map);
-    
+
     CreateRenderKernel(program.prog);
 
 //    string name = "base";
@@ -97,8 +97,8 @@ void OpenCLRenderer::Render() {
 
     BaseRenderer::Render();
 
-    size_t width = (size_t) film_width;
-    size_t height = (size_t) film_height;
+    size_t width = static_cast<size_t>(film_width * film_render_scale);
+    size_t height = static_cast<size_t>(film_height * film_render_scale);
 
     queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height));
 //    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height), cl::NDRange(8, 4));

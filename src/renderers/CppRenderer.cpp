@@ -79,10 +79,7 @@ void CppRenderer::Render() {
             pixel = pixel.pow(1.f / 2.2f);
             pixel *= 255;
 
-//            pixels[y * width + x] = SDL_MapRGB(surface->format, (Uint8) pixel.x, (Uint8) pixel.y, (Uint8) pixel.z);
-//
-            pixels[y * film_width + x] = 0;
-            pixels[y * film_width + x] |= (Uint32) (((Uint8)pixel.x << 16) | ((Uint8)pixel.y << 8) | ((Uint8)pixel.z << 0));
+            pixels[y * film_width + x] = (0xFF000000 | (Uint8(pixel.x) << 16) | (Uint8(pixel.y) << 8) | (Uint8(pixel.z) << 0));
         }
     }
 

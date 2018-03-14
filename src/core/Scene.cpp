@@ -103,7 +103,9 @@ Scene::~Scene() {
 }
 
 void Scene::LoadModel(const string& file) {
-
+    
+    cam_pos = {0, 0, 5};
+    
     std::vector<std::unique_ptr<Object3D>> triangles = Object3D::CreateTriMesh(file);
     std::move(triangles.begin(), triangles.end(), std::back_inserter(objects));
 }
@@ -438,6 +440,14 @@ void Scene::PostProcess() {
     debug_scale = std::sqrt((max * max).max() + (min * min).max());
     debug_scale = ((max - min) / 2.f).max();
     cout << "BVH scale " << debug_scale << endl;
+
+    cout << "min:" << min << endl;
+    cout << "max:" << max << endl;
+
+    Vec3 center = min + ((max - min) / 2);
+
+    cam_pos = {center.x, center.y, 5 * max.z};
+    cout << "pos: " << cam_pos << endl;
 
     triangle_count = 0;
     for (const auto& object : objects) {
