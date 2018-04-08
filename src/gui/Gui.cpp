@@ -25,8 +25,8 @@ std::vector<std::string> GetModelArray(const string& model_dir_path);
 static void ShowBVHStatistics();
 void FirstFrame(SDL_Window *pWindow);
 
-GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* scene, CameraControls* controls) :
-    scene{scene}, options(options), window{window}, renderer(renderer), controls(controls)
+GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* scene, Film* film, CameraControls* controls) :
+    scene{scene}, options(options), window{window}, renderer(renderer), film{film}, controls(controls)
 {
     // Setup ImGui binding
     ImGui_ImplSdl_Init(window);
@@ -109,22 +109,22 @@ void GUI::Draw() {
     ImGui::Begin("Image", nullptr, window_flags | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
     {
         void* tex_id = reinterpret_cast<void*>(renderer->GetFilmTexture());
-        Vec3 content_region = ImGui::GetContentRegionAvail();
-        Vec3 image_size = content_region.min2D();
-        renderer->SetFilmDisplaySize(image_size);
+        Vec3 avail_space_size = ImGui::GetContentRegionAvail();
+        render_image_size = avail_space_size.min2D();
 
         Vec3 cursor_pos = ImGui::GetCursorPos();
-        cursor_pos += (content_region - image_size) / 2.f;
-        cursor_pos.x = roundf(cursor_pos.x);
-        cursor_pos.y = roundf(cursor_pos.y);
+        cursor_pos += ((avail_space_size - render_image_size) / 2.0f).round();
+        render_image_pos = cursor_pos;
         ImGui::SetCursorPos(cursor_pos);
-        
+
         // ImageButton to prevent moving the window by clicking on it
-        ImGui::ImageButton(tex_id, image_size, Vec3{0}, Vec3{1}, 0);
+        ImGui::ImageButton(tex_id, render_image_size, Vec3{0}, Vec3{1}, 0);
     }
     ImGui::End();
 
     // Rendering
+    glClearColor(0.17, 0.17, 0.17, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
     ImGui::Render();
 }
 
@@ -297,15 +297,20 @@ void GUI::ShowLightingSettings() {
             options_has_changed = true;
         }
 
-        float render_scale = 100.f * renderer->GetFilmRenderScale();
-        if (ImGui::SliderFloat("Render scale", &render_scale, 10, 200, "%.0f %%")) {
-            renderer->SetFilmRenderScale(roundf(render_scale) / 100.f);
-            options_has_changed = true;
+        int base_film_size_temp[2] = {film->GetBaseFilmWidth(),
+                                      film->GetBaseFilmHeight()};
+        if (ImGui::SliderInt2("Film size", base_film_size_temp, 128, 1024)) {
+            film->SetBaseFilmSize(base_film_size_temp[0], base_film_size_temp[1]);
         }
 
-        Vec3 size = renderer->GetFilmSize() * renderer->GetFilmRenderScale();
+        float temp_render_scale = 100.f * film->GetFilmRenderScale();
+        if (ImGui::SliderFloat("Render scale", &temp_render_scale, 10, 200, "%.0f %%")) {
+            film->SetFilmRenderScale(temp_render_scale / 100.f);
+        }
+
+        Vec3 size = film->GetSize();
         ImGui::Text("Render size: %g x %g", size.x, size.y);
-        size = renderer->GetFilmDisplaySize();
+        size = render_image_size;
         ImGui::Text("Display size: %g x %g", size.x, size.y);
 
         ImGui::PopItemWidth();
@@ -658,13 +663,35 @@ bool GUI::ProcessEvent(SDL_Event* event) {
     return false;
 }
 
-//TODO:Remove if unused
-bool MouseClickedOnWindow(int x, int y, const char* name) {
+bool GUI::MouseClickedOnFilm(SDL_MouseButtonEvent mouse) {
 
-    ImGuiWindow* window = ImGui::FindWindowByName(name);
+    Vec3 window_pos = ImGui::FindWindowByName("Image")->Pos;
 
-    Vec3 min = window->Pos;
-    Vec3 max = window->Size.operator::Vec3() + min;
+    Vec3 min = window_pos + render_image_pos;
+    Vec3 max = min + render_image_size;
 
-    return (x > min.x && x < max.x && y > min.y && y < max.y);
+    int x = mouse.x;
+    int y = mouse.y;
+
+    return (x >= min.x && x < max.x && y >= min.y && y < max.y);
+}
+
+Vec3 GUI::ScreenToFilmCoordinates(SDL_MouseButtonEvent mouse) {
+
+    // The "Image" ImGui window can move inside the Paralight window
+    Vec3 window_pos = ImGui::FindWindowByName("Image")->Pos;
+
+    // The actual image can move inside its ImGui window
+    Vec3 film_pos = window_pos + render_image_pos;
+    film_pos.z = 0;
+
+    // Translate mouse to image origin (upper left corner)
+    Vec3 film_space_mouse = Vec3(mouse.x, mouse.y) - film_pos;
+
+    // Get the ratio of the true film size to the displayed image
+    Vec3 scale = film->GetSize() / render_image_size;
+
+    film_space_mouse *= scale;
+
+    return film_space_mouse;
 }

@@ -85,7 +85,6 @@ void CameraControls::Update() {
         delta += strafe;
     }
 
-//    delta *= 0.5f; // Speed factor
     delta *= speed_factor; // Speed factor
 
     if (control_mode == ORBIT) {

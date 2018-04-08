@@ -17,11 +17,10 @@ using std::max;
 using std::string;
 using std::unique_ptr;
 
-BaseRenderer::BaseRenderer(Scene* scene, SDL_Window* window, CameraControls* const controls, Options* options)
-        : scene{scene}, window{window}, camera_controls{controls}, options{options} {
+BaseRenderer::BaseRenderer(Scene* scene, SDL_Window* window, Film* film, CameraControls* const controls, Options* options)
+        : scene{scene}, window{window}, film{film}, camera_controls{controls}, options{options} {
     camera_controls->SetSpeed(scene->debug_scale);
-    pixels = std::vector<uint32_t>(film_width * film_height);
-    
+
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -32,6 +31,7 @@ BaseRenderer::BaseRenderer(Scene* scene, SDL_Window* window, CameraControls* con
 }
 
 BaseRenderer::~BaseRenderer() {
+    glDeleteTextures(1, &texture);
 }
 
 void BaseRenderer::Update() {
@@ -51,7 +51,7 @@ void BaseRenderer::Update() {
     // The CLEAR_ACCUM_BIT will be mult/AND with the accumulation buffer and frame number
     // Setting it to 0 will clear them and setting to 1 will do nothing
     // Check if the current rendering config has changed
-    CLEAR_ACCUM_BIT = !(options->HasChanged() || camera_controls->HasChanged() || scene->HasChanged());
+    CLEAR_ACCUM_BIT = !(options->HasChanged() || camera_controls->HasChanged() || scene->HasChanged() || film->HasChanged());
 
     frame_number *= CLEAR_ACCUM_BIT;
     frame_number++;
@@ -67,43 +67,10 @@ void BaseRenderer::Render() {
     }
 }
 
-void BaseRenderer::DrawTexture() {
-
-    int window_width, window_height;
-    SDL_GetWindowSize(window, &window_width, &window_height);
-
-    int film_width = static_cast<int>(this->film_width * film_render_scale);
-    int film_height = static_cast<int>(this->film_height * film_render_scale);
+void BaseRenderer::UpdateGLTexture() {
 
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, film_width, film_height, 0, GL_BGRA, GL_UNSIGNED_BYTE, pixels.data());
-
-    glClearColor(0.17, 0.17, 0.17, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_CULL_FACE);
-    glEnable(GL_TEXTURE_2D);
-    
-    int x = (window_width - this->film_width) / 2;
-    int y = (window_height - this->film_height) / 2;
-    glViewport(x, y, this->film_width, this->film_height);
-    
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0.0f, 1, 1, 0.0f, -1.0f, +1.0f);
-    glPushMatrix();
-    
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glPushMatrix();
-
-    // Draw a textured quad
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex2i(0, 0);
-    glTexCoord2f(0, 1); glVertex2i(0, 1);
-    glTexCoord2f(1, 1); glVertex2i(1, 1);
-    glTexCoord2f(1, 0); glVertex2i(1, 0);
-    glEnd();
-    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, film->GetWidth(), film->GetHeight(), 0, GL_BGRA, GL_UNSIGNED_BYTE, film->GetPixels());
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 

@@ -14,7 +14,8 @@ set(SOURCE_FILES ${SOURCE_FILES}
         objects/SurfaceData.cpp objects/SurfaceData.h
         core/BVHCommons.h
         core/BVH.cpp core/BVH.h
-        core/BVH2.cpp core/BVH2.h)
+        core/BVH2.cpp core/BVH2.h
+         core/Film.cpp core/Film.h)
 
 set(SOURCE_FILES ${SOURCE_FILES}
         renderers/BaseRenderer.cpp renderers/BaseRenderer.h

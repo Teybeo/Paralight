@@ -27,9 +27,9 @@ using std::map;
 
 Program CreateProgram(cl::Context& context, cl::CommandQueue& queue, cl::Device& device, const Options* options) ;
 
-OpenCLRenderer::OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls* pControls, Options* options,
+OpenCLRenderer::OpenCLRenderer(Scene* scene, SDL_Window* pWindow, Film* film, CameraControls* pControls, Options* options,
                                int platform_index, int device_index)
-        : BaseRenderer(scene, pWindow, pControls, options) {
+        : BaseRenderer(scene, pWindow, film, pControls, options) {
 
     if (platform_index != -1 && device_index != -1) {
         platform = platform_list.getPlatformByIndex(platform_index);
@@ -71,8 +71,7 @@ OpenCLRenderer::OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls
 
     cout << "Objects: " << object_count << endl;
 
-    texture           = cl::Buffer(context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, sizeof(Uint8) * 4 * 1920 * 1080);
-    accum_buffer      = cl::Buffer(context, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, sizeof(float) * 4 * 1920 * 1080);
+    CreateFilmBuffers();
     options_buffer    = cl::Buffer(context, CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY, sizeof(CLOptions));
 
     CreateSceneBuffers(scene);
@@ -97,28 +96,26 @@ void OpenCLRenderer::Render() {
 
     BaseRenderer::Render();
 
-    size_t width = static_cast<size_t>(film_width * film_render_scale);
-    size_t height = static_cast<size_t>(film_height * film_render_scale);
+    size_t width = size_t(film->GetWidth());
+    size_t height = size_t(film->GetHeight());
 
     queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height));
 //    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height), cl::NDRange(8, 4));
 //    queue.enqueueNDRangeKernel(render_kernel, cl::NullRange, cl::NDRange(width, height), cl::NDRange(8, 8));
-    queue.enqueueReadBuffer(texture, CL_TRUE, 0, sizeof(Uint32) * width * height, pixels.data());
+    queue.enqueueReadBuffer(texture, CL_TRUE, 0, sizeof(Uint32) * width * height, film->GetPixels());
 }
 
-void OpenCLRenderer::TracePixel(int x, int y, bool picking) {
+void OpenCLRenderer::TracePixel(Vec3 pixel, bool picking) {
 
-    SDL_Surface* surface = SDL_GetWindowSurface(window);
-    size_t width = (size_t) surface->w;
-    size_t height = (size_t) surface->h;
+    size_t width = (size_t) film->GetWidth();
+    size_t height = (size_t) film->GetHeight();
 
-    float coord[2] = {float(x), float(y)};
     int hit_object_index = -1;
 
     cl::Buffer hit_object_output_buffer  = cl::Buffer {context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, sizeof(int)};
     cl::Buffer coord_input_buffer        = cl::Buffer {context, CL_MEM_READ_ONLY  | CL_MEM_HOST_WRITE_ONLY, sizeof(float) * 2};
 
-    queue.enqueueWriteBuffer(coord_input_buffer, CL_TRUE, 0, sizeof(float) * 2, coord);
+    queue.enqueueWriteBuffer(coord_input_buffer, CL_TRUE, 0, sizeof(float) * 2, &pixel);
 
     cl::make_kernel<cl::Buffer&, cl::Buffer&, cl::Buffer&, cl::Buffer&, cl::Buffer&, cl::Buffer&, cl::Buffer&> kernel(program.prog, "Intersect");
     cl::EnqueueArgs enqueueArgs(queue, cl::NDRange(width, height));
@@ -151,6 +148,10 @@ void OpenCLRenderer::Update() {
         CLEAR_ACCUM_BIT = 0;
         frame_number = 0;
         reload_kernel = false;
+    }
+
+    if (film->HasChanged()) {
+        UpdateFilmBuffers();
     }
 
     if (scene->model_has_changed) {
@@ -255,6 +256,19 @@ void OpenCLRenderer::UpdateEnvMap() {
     CreateEnvMapImage(scene->env_map);
 
     render_kernel.setArg(9, env_map_image);
+}
+
+void OpenCLRenderer::CreateFilmBuffers() {
+
+    int pixel_count = film->GetWidth() * film->GetHeight();
+    texture           = cl::Buffer(context, CL_MEM_WRITE_ONLY | CL_MEM_HOST_READ_ONLY, sizeof(Uint8) * 4 * pixel_count);
+    accum_buffer      = cl::Buffer(context, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS, sizeof(float) * 4 * pixel_count);
+}
+
+void OpenCLRenderer::UpdateFilmBuffers() {
+    CreateFilmBuffers();
+    render_kernel.setArg(0, texture);
+    render_kernel.setArg(1, accum_buffer);
 }
 
 void OpenCLRenderer::CreateSceneBuffers(const Scene* scene) {

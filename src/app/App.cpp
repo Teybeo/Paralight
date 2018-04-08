@@ -27,13 +27,15 @@ App::App() {
 
     window = Window {"Paralight", 1280, 720};
 
+    film = Film {500, 500};
+
     camera_controls.SetPosition(scene.cam_pos);
     camera_controls.SetRotation(scene.yz_angle, scene.xz_angle);
 
-//    renderer = new CppRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
-    renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
+    renderer = new CppRenderer(&scene, window.GetSDL_window(), &film, &camera_controls, &options);
+//    renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &film, &camera_controls, &options);
 
-    overlay = new GUI {&options, window.GetSDL_window(), renderer, &scene, &camera_controls};
+    gui = new GUI {&options, window.GetSDL_window(), renderer, &scene, &film, &camera_controls};
 
     is_running = true;
 }
@@ -48,9 +50,10 @@ void App::Run() {
 }
 
 void App::Update() {
-    
+
+    film.Update();
     options.Update();
-    overlay->Update();
+    gui->Update();
     camera_controls.Update();
     renderer->Update();
 }
@@ -58,8 +61,8 @@ void App::Update() {
 void App::Draw() {
     
     renderer->Render();
-    renderer->DrawTexture();
-    overlay->Draw();
+    renderer->UpdateGLTexture();
+    gui->Draw();
     
     SDL_GL_SwapWindow(window.GetSDL_window());
 }
@@ -70,7 +73,7 @@ void App::Event() {
 
     SDL_Event ev = {};
     while (SDL_PollEvent(&ev)) {
-        if (overlay->ProcessEvent(&ev))
+        if (gui->ProcessEvent(&ev))
             continue;
 
         switch (ev.type) {
@@ -85,9 +88,8 @@ void App::Event() {
                 }
                 break;
             case SDL_MOUSEBUTTONUP:
-                if (ev.button.windowID == SDL_GetWindowID(window.GetSDL_window())) {
-                    renderer->TracePixel(ev.button.x, ev.button.y, ev.button.button == SDL_BUTTON_LEFT);
-                }
+                if (gui->MouseClickedOnFilm(ev.button))
+                    renderer->TracePixel(gui->ScreenToFilmCoordinates(ev.button), ev.button.button == SDL_BUTTON_LEFT);
                 break;
             case SDL_MOUSEMOTION:
                 camera_controls.MouseEvent(ev.motion);
@@ -105,15 +107,15 @@ void App::Event() {
 
                 switch (ev.user.code) {
                 case BaseRenderer::EVENT_CPP_RENDERER:
-                    renderer = new CppRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
+                    renderer = new CppRenderer(&scene, window.GetSDL_window(), &film, &camera_controls, &options);
                     break;
                 case BaseRenderer::EVENT_CL_RENDERER:
-                    renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &camera_controls, &options);
+                    renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &film, &camera_controls, &options);
                     break;
                 case BaseRenderer::EVENT_CL_PLATFORM_DEVICE_CHANGE:
                     platform_index = *static_cast<int*>(ev.user.data1);
                     device_index   = *static_cast<int*>(ev.user.data2);
-                    renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &camera_controls, &options, platform_index, device_index);
+                    renderer = new OpenCLRenderer(&scene, window.GetSDL_window(), &film, &camera_controls, &options, platform_index, device_index);
                     break;
                 default:
                     break;

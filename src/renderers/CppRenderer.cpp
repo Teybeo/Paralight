@@ -15,8 +15,8 @@ unsigned char sRGB_table[sRGB_LUT_LENGTH];
 
 void initializeSRGBTable();
 
-CppRenderer::CppRenderer(Scene* scene, SDL_Window* window, CameraControls* const controls, Options* options)
-        : BaseRenderer{scene, window, controls, options} {
+CppRenderer::CppRenderer(Scene* scene, SDL_Window* window, Film* film, CameraControls* const controls, Options* options)
+        : BaseRenderer{scene, window, film, controls, options} {
 
 #ifdef USE_TRIGO_LOOKUP
     initializeCosTable();
@@ -26,20 +26,22 @@ CppRenderer::CppRenderer(Scene* scene, SDL_Window* window, CameraControls* const
 #endif
 
     initializeSRGBTable();
-    accum_texture = new Vec3[1920 * 1080];
+    accum_texture.resize(film->GetWidth() * film->GetHeight());
 
     cout << "C++ Renderer ready" << endl;
 }
 
 CppRenderer::~CppRenderer() {
     cout << "C++ Renderer dtor called" << endl;
-
-    delete[] accum_texture;
 };
 
 void CppRenderer::Render() {
 
     BaseRenderer::Render();
+
+    int film_width = film->GetWidth();
+    int film_height = film->GetHeight();
+    auto* pixels = static_cast<uint32_t*>(film->GetPixels());
 
     float ratio = (float) film_width / film_height;
     float fov_factor = tanf(DEG_TO_RAD(options->fov / 2.f));
@@ -59,14 +61,11 @@ void CppRenderer::Render() {
             Ray ray{camera_controls->GetPosition(), x, y, film_width, film_height, ratio, fov_factor};
             ray.direction = camera_controls->GetRotation() * ray.direction;
             Vec3 pixel;
-#ifndef INNER_LOOP
             for (int i = 0; i < options->sample_count; ++i) {
                 pixel += Raytrace(ray, debug_pixel) * (1.f / options->sample_count);
 //                pixel += Raytrace_Recursive(ray) * (1.f / options->sample_count);
             }
-#else
-            pixel += Raytrace(ray);
-#endif
+
             accum_texture[y * film_width + x] *= CLEAR_ACCUM_BIT;
             accum_texture[y * film_width + x] += pixel;
 
@@ -295,17 +294,15 @@ bool CppRenderer::FindNearestObject(const Ray& ray, float& nearest_dist, Object3
     return (hit_object != nullptr);
 }
 
-void CppRenderer::TracePixel(int x, int y, bool picking) {
+void CppRenderer::TracePixel(Vec3 pixel, bool picking) {
 
-    SDL_Surface* surface = SDL_GetWindowSurface(window);
-
-    int width = surface->w;
-    int height = surface->h;
+    int width = film->GetWidth();
+    int height = film->GetHeight();
 
     float ratio = (float) width / height;
     float fov_factor = tanf(DEG_TO_RAD(options->fov / 2.f));
 
-    Ray ray{camera_controls->GetPosition(), x, y, width, height, ratio, fov_factor};
+    Ray ray (camera_controls->GetPosition(), pixel.x, pixel.y, width, height, ratio, fov_factor);
     ray.direction = camera_controls->GetRotation() * ray.direction;
 
     if (picking) {
@@ -313,20 +310,32 @@ void CppRenderer::TracePixel(int x, int y, bool picking) {
         float dist = 999999999.f;
         int triangle_index = -1;
         int submesh_index = -1;
-        cout << "Ray origin: " << ray.origin << " direction: " << ray.direction << endl;
+        cout << "Trace Pixel: " << int(pixel.x) << ", " << int(pixel.y) << endl;
+        cout << "Film size: " << width << " x " << height << endl;
+//        cout << "Ray origin: " << ray.origin << " direction: " << ray.direction << endl;
 //        if (FindNearestObject(ray, dist, hit_object, triangle_index, submesh_index) == true) {
 //        if (scene->bvh.FindNearestIntersection(ray, dist, hit_object) == true && hit_object) {
         if (scene->bvh2->FindNearestIntersectionOpti(ray, dist, hit_object) == true && hit_object) {
             selected_object = hit_object;
-            cout << "Hit object: " << typeid(*hit_object->shape).name() << endl;
-            cout << "Hitpos: " << (ray.origin + ray.direction * dist) << endl;
-            if (typeid(*hit_object->shape) == typeid(Triangle)) {
-                cout << "Triangle center: " << hit_object->GetCenter() << endl;
-            }
+//            cout << "Hit object: " << typeid(*hit_object->shape).name() << endl;
+//            cout << "Hitpos: " << (ray.origin + ray.direction * dist) << endl;
+//            if (typeid(*hit_object->shape) == typeid(Triangle))
+//                cout << "Triangle center: " << hit_object->GetCenter() << endl;
+        } else {
+            selected_object = nullptr;
         }
     }
     else {
         Raytrace(ray, true);
+    }
+}
+
+void CppRenderer::Update() {
+
+    BaseRenderer::Update();
+
+    if (film->HasChanged())  {
+        accum_texture.resize(film->GetWidth() * film->GetHeight());
     }
 }
 

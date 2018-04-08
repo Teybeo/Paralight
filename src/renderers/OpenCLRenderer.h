@@ -65,14 +65,14 @@ private:
 
 public:
 
-    OpenCLRenderer(Scene* scene, SDL_Window* pWindow, CameraControls* pControls, Options* options, int platform_index = -1, int device_index = -1);
+    OpenCLRenderer(Scene* scene, SDL_Window* pWindow, Film* film, CameraControls* pControls, Options* options, int platform_index = -1, int device_index = -1);
     ~OpenCLRenderer() override;
 
     void Render() override;
 
     void Update() override;
 
-    void TracePixel(int x, int y, bool picking);
+    void TracePixel(Vec3 pixel, bool picking);
 
     const OpenCLPlatformList& getPlatformList() const {
         return platform_list;
@@ -99,6 +99,9 @@ private:
     void CreateSceneBuffers(const Scene* scene);
     void UpdateSceneBuffers();
 
+    void CreateFilmBuffers();
+    void UpdateFilmBuffers();
+
     void UpdateOptionsBuffer();
 
     void UpdateMaterialBuffer();
@@ -113,6 +116,8 @@ private:
     cl::Buffer CreateBuffer(std::vector<T> vec, cl_mem_flags flags);
 
     static void CL_CALLBACK debugCallback (const char *errinfo, const void *private_info, size_t cb, void *user_data);
+
+
 };
 
 #endif //OPENCL_OPENCLRENDERER_H

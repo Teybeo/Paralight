@@ -5,18 +5,20 @@
 
 class CppRenderer : public BaseRenderer {
 
-    Vec3* accum_texture;
+    std::vector<Vec3> accum_texture;
 
 public:
 
     CppRenderer() = default;
-    CppRenderer(Scene* scene, SDL_Window* pWindow, CameraControls* const controls, Options* options);
+    CppRenderer(Scene* scene, SDL_Window* pWindow, Film* film, CameraControls* const controls, Options* options);
 
     ~CppRenderer() override;
 
     void Render();
 
-    void TracePixel(int x, int y, bool picking);
+    void Update() override;
+
+    void TracePixel(Vec3 pixel, bool picking);
 
     Vec3 Raytrace(Ray ray, bool debug_pixel = false);
 

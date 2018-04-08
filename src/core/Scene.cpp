@@ -18,6 +18,10 @@ using std::string;
 
 Scene::Scene(string model_file) {
 
+//    cam_pos = {36.2491, 1.09842, -5.07885};
+//    xz_angle = -1.71f;
+//    yz_angle = 0.03f;
+
     string env_dir = "../../envmaps/";
 
 //    std::string env = "Ditch-River_2k.hdr";
@@ -34,14 +38,30 @@ Scene::Scene(string model_file) {
 
 //    std::string file = "blender_tests/textured_square.obj";
 //    std::string file = "blender_tests/cube.obj";
+//    std::string file = "blender_tests/cube.gltf";
+//    std::string file = "gltf_pbr_samples/BoxAnimated.gltf";
+//    std::string file = "gltf_pbr_samples/BoxTextured.gltf";
+//    std::string file = "gltf_pbr_samples/CesiumMilkTruck.gltf";
+//    std::string file = "gltf_pbr_samples/BoomBox.gltf";
+    std::string file = "water_bottle/WaterBottle.gltf";
+//    std::string file = "damagedHelmet/damagedHelmet.gltf";
+//    std::string file = "centurion/centurion.gltf";
+//    std::string file = "knight_artorias/scene.gltf";
+//    std::string file = "aztec_style_temple_kit/scene.gltf";
+//    std::string file = "cudillero_diorama_cityscene/scene.gltf";
+//    std::string file = "zbrush_for_concept_-_mech_design_d.ver/scene.gltf";
 //    std::string file = "blender_tests/bvh_tests_2.obj";
 //    std::string file = "blender_tests/textured_square.obj";
 //    std::string file = "blender_tests/multi_mesh.obj";
 //    std::string file = "blender_tests/suzanne_low_poly_500.obj";
 //    std::string file = "dragon/dragon_low_poly_1k.obj";
 //    std::string file = "dragon/dragon.obj";
+//    std::string file = "feng_mao/head.obj";
+//    std::string file = "feng_mao/firstguardian.obj";
 //    std::string file = "blender_tests/bvh_sponza.obj";
 //    std::string file = "blender_tests/crytek_sponza_cl.obj";
+//    std::string file = "bathroom/bathroom.obj";
+//    std::string file = "interior_library/mesa-concept.dae";
 //    std::string file = "crytek_sponza/crytek_vase_fixed.obj";
 //    std::string file = "marko_sponza/objects/sponza.lwo";
 //    std::string file = "sibenik_cathedral/sibenik.obj";
@@ -53,7 +73,7 @@ Scene::Scene(string model_file) {
 //    std::string file = "san-miguel 2016 version/sanMiguel/sanMiguel.obj";
 //    std::string file = "san_miguel/san-miguel.obj";
 //    std::string file = "Shanghai_city/shanghai_city_scene.obj";
-    std::string file = "tibet_house/house.obj";
+//    std::string file = "tibet_house/house.obj";
 //    std::string file = "ue4 stuff/grux.obj";
 //    std::string file = "Array_House_Example/Array House Example_obj.obj";
 
@@ -86,7 +106,6 @@ void Scene::LoadObjects(const string& file) {
     PostProcess();
 }
 
-
 void Scene::Clear() {
     delete bvh2;
     set<const TriMesh*> trimeshes = GetTriMeshes();
@@ -114,10 +133,10 @@ void Scene::LoadSomeLights() {
     cam_pos = {0, 1, 2};
 
     cam_pos = {1.56117, 1.30991, 1.9523};
-    xz_angle = -0.92f;
-    yz_angle = 0.24f;
+//    xz_angle = -0.92f;
+//    yz_angle = 0.24f;
 
-    std::array<Vec3, 5> pos = {
+    std::array<Vec3, 5> pos_array = {
            Vec3 {0, 15, 0},
            Vec3 {7, 15, 0},
            Vec3 {14, 15, 0},
@@ -125,10 +144,11 @@ void Scene::LoadSomeLights() {
            Vec3 {-14, 15, 0},
     };
 
-    for (size_t i = 0; i < pos.size(); ++i) {
-        Object3D* light = Object3D::CreateSphere(pos[i].x, pos[i].y, pos[i].z, 2);
-        light->material = new OldMaterial {0.4f, 0.1f, 0.1f};
-        light->setEmission(10);
+    for (auto& pos : pos_array) {
+        Object3D* light = Object3D::CreateSphere(pos.x, pos.y, pos.z, 2);
+        light->material = new MetallicWorkflow {0.4f, 0.1f, 0.1f};
+        light->setEmission(0.3);
+        light->setEmissionColor(Vec3::RandomColor());
         objects.push_back(unique_ptr<Object3D>(light));
     }
 
@@ -439,10 +459,10 @@ void Scene::PostProcess() {
     Vec3 max = bvh2->GetRoot()->bbox.max;
     debug_scale = std::sqrt((max * max).max() + (min * min).max());
     debug_scale = ((max - min) / 2.f).max();
-    cout << "BVH scale " << debug_scale << endl;
+    cout << "BVH scale: " << debug_scale << endl;
 
-    cout << "min:" << min << endl;
-    cout << "max:" << max << endl;
+    cout << "min: " << min << endl;
+    cout << "max: " << max << endl;
 
     Vec3 center = min + ((max - min) / 2);
 
@@ -470,5 +490,14 @@ void Scene::PostProcess() {
     cout << material_set.size() << " materials" << endl;
 
     CheckObjectsOrder();
+    CreateLightArray();
+}
+
+void Scene::CreateLightArray() {
+
+    for (const auto& object : objects) {
+        if (object->getEmissionIntensity() > 0)
+            lights.push_back(std::make_shared<Object3D>(*object));
+    }
 }
 

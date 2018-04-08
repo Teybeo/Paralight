@@ -25,6 +25,7 @@ public:
     BVH2* bvh2;
     BVH bvh;
     std::vector<std::unique_ptr<Object3D>> objects;
+    std::vector<std::shared_ptr<Object3D>> lights;
     std::set<Material*> material_set;
     std::unique_ptr<TextureFloat> env_map;
 
@@ -77,6 +78,8 @@ private:
     void CheckObjectsOrder();
 
     void PostProcess();
+    
+    void CreateLightArray();
 };
 
 #endif //PATHTRACER_SCENE_H

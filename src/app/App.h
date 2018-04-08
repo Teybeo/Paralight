@@ -1,6 +1,7 @@
 #ifndef TEST3D_APP_H
 #define TEST3D_APP_H
 
+#include <core/Film.h>
 #include "core/Scene.h"
 #include "core/CameraControls.h"
 #include "core/Options.h"
@@ -13,8 +14,9 @@ class App {
     Scene scene;
     BaseRenderer* renderer;
     CameraControls camera_controls;
-    GUI* overlay;
+    GUI* gui;
     Options options;
+    Film film;
     bool is_running;
 
 public:
