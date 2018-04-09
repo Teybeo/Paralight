@@ -4,6 +4,7 @@
 #include <iosfwd>
 #include <cmath>
 #include <iostream>
+#include <random>
 #include "TrigoLut.h"
 
 #define CHECK_NAN(X, x, y)\
@@ -84,6 +85,12 @@ public:
         return Vec3{x / rhs.x,
                     y / rhs.y,
                     z / rhs.z};
+    }
+
+    void operator/=(const Vec3& rhs) {
+        x /= rhs.x;
+        y /= rhs.y;
+        z /= rhs.z;
     }
 
     Vec3 operator/(const float scalar) const {
@@ -271,11 +278,19 @@ public:
                 std::floor(y),
                 std::floor(z)};
     }
-    
+
+    Vec3 round() const {
+        return {roundf(x), roundf(y), roundf(z)};
+    }
+
     static Vec3 mix(Vec3 A, Vec3 B, float mix_factor) {
         return (A * (1 - mix_factor)) + (B * mix_factor);
     }
-    
+
+    static Vec3 RandomColor() {
+        return {rand() / float(RAND_MAX), rand() / float(RAND_MAX), rand() / float(RAND_MAX)};
+    }
+
     void checkNormal() const {
         if (length() != 1.0e-2) {
             std::cout.setf( std::ios::fixed, std:: ios::floatfield ); // floatfield set to fixed

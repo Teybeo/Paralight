@@ -25,9 +25,9 @@ App::App() {
     std::srand((unsigned int) std::time(0));
 //    std::srand((unsigned int) 3);
 
-    window = Window {"Paralight", 1280, 720};
+    window = Window {"Paralight", 1600, 900};
 
-    film = Film {500, 500};
+    film = Film {900, 576};
 
     camera_controls.SetPosition(scene.cam_pos);
     camera_controls.SetRotation(scene.yz_angle, scene.xz_angle);

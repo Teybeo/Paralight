@@ -78,6 +78,7 @@ void GUI::Draw() {
 
     if (is_settings_opened)
     {
+    ImGui::SetNextWindowSizeConstraints(ImVec2(300, -1), ImVec2(400, 1000));
     ImGui::Begin("Settings", &is_settings_opened, window_flags);
         ShowRendererSettings();
         ShowLightingSettings();
@@ -106,19 +107,12 @@ void GUI::Draw() {
 
     // Width > 100, Height > 100
     ImGui::SetNextWindowSizeConstraints(ImVec2(100, 100), ImVec2(FLT_MAX, FLT_MAX));
-    ImGui::Begin("Image", nullptr, window_flags | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+    ImGui::Begin("Image", nullptr, window_flags | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
     {
         void* tex_id = reinterpret_cast<void*>(renderer->GetFilmTexture());
-        Vec3 avail_space_size = ImGui::GetContentRegionAvail();
-        render_image_size = avail_space_size.min2D();
-
-        Vec3 cursor_pos = ImGui::GetCursorPos();
-        cursor_pos += ((avail_space_size - render_image_size) / 2.0f).round();
-        render_image_pos = cursor_pos;
-        ImGui::SetCursorPos(cursor_pos);
-
+        render_image_pos = ImGui::GetCursorPos();
         // ImageButton to prevent moving the window by clicking on it
-        ImGui::ImageButton(tex_id, render_image_size, Vec3{0}, Vec3{1}, 0);
+        ImGui::ImageButton(tex_id, film->GetBaseSize(), Vec3{0}, Vec3{1}, 0);
     }
     ImGui::End();
 
@@ -219,11 +213,9 @@ void GUI::ShowLightingSettings() {
     scene->envmap_has_changed = false;
     scene->model_has_changed = false;
 
-    if (ImGui::CollapsingHeader("Render settings", nullptr, true, true)) {
-
-//        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
-//        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() / 1.f);
-        ImGui::PushItemWidth(0);
+    if (ImGui::CollapsingHeader("Render settings", nullptr, true, true))
+    {
+        ImGui::PushItemWidth(-100);
             int temp_model_index = model_index;
             bool changed = ImGui::Combo("Model", &temp_model_index, item_getter, &model_array, (int) model_array.size());
 
@@ -234,10 +226,7 @@ void GUI::ShowLightingSettings() {
                 controls->SetSpeed(scene->debug_scale);
                 scene->model_has_changed = true;
             }
-        ImGui::PopItemWidth();
 
-//        ImGui::PushItemWidth(ImGui::GetWindowContentRegionWidth() / 2.f);
-        ImGui::PushItemWidth(0);
         int temp_envmap_index = envmap_index;
         ImGui::Combo("Environnement", &temp_envmap_index, item_getter, &envmap_array, (int) envmap_array.size());
 
@@ -246,7 +235,6 @@ void GUI::ShowLightingSettings() {
             scene->env_map.reset(new TextureFloat {envmap_array[envmap_index]});
             scene->envmap_has_changed = true;
         }
-        ImGui::PopItemWidth();
 
         bool lambertian = (bool) (options->brdf_bitfield & LAMBERTIAN);
         bool microfacet = (bool) (options->brdf_bitfield & MICROFACET);
@@ -260,7 +248,6 @@ void GUI::ShowLightingSettings() {
             options_has_changed = true;
         }
         
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() * 0.45f);
         int sample_temp = options->sample_count;
         if (ImGui::InputInt("Sample count", &sample_temp, 1, 1, ImGuiInputTextFlags_CharsDecimal)) {
             sample_temp = std::max(1, sample_temp);
@@ -273,24 +260,7 @@ void GUI::ShowLightingSettings() {
                 options_has_changed = true;
             }
         }
-        ImGui::PopItemWidth();
-        
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() * 0.45f);
-        int bounce_temp = options->bounce_cout;
-        if (ImGui::InputInt("Bounce count", &bounce_temp, 1, 1, ImGuiInputTextFlags_CharsDecimal)) {
-            bounce_temp = std::max(1, bounce_temp);
-            if (bounce_temp == options->bounce_cout + 1) {
-                options->bounce_cout *= 2;
-                options_has_changed = true;
-            }
-            else if (bounce_temp == options->bounce_cout - 1) {
-                options->bounce_cout /= 2.f;
-                options_has_changed = true;
-            }
-        }
-        ImGui::PopItemWidth();
 
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() * 0.45f);
         float fov_temp = DEG_TO_RAD(options->fov);
         if (ImGui::SliderAngle("Field of view", &fov_temp, 0, 180)) {
             options->fov = static_cast<int>(RAD_TO_DEG(fov_temp));
@@ -310,10 +280,8 @@ void GUI::ShowLightingSettings() {
 
         Vec3 size = film->GetSize();
         ImGui::Text("Render size: %g x %g", size.x, size.y);
-        size = render_image_size;
+        size = film->GetBaseSize();
         ImGui::Text("Display size: %g x %g", size.x, size.y);
-
-        ImGui::PopItemWidth();
 
         ImGui::Checkbox("Tonemapping", &options->use_tonemapping);
         options_has_changed |= ImGui::Checkbox("Emissive lighting", &options->use_emissive_lighting);
@@ -322,8 +290,8 @@ void GUI::ShowLightingSettings() {
 //        if (ImGui::SliderInt("Depth target", &options->depth_target, 0, 30, "%.0f")) {
 //            options_has_changed = true;
 //        }
+        ImGui::PopItemWidth();
     }
-
 }
 
 void GUI::ShowObjectSettings() {
@@ -617,11 +585,11 @@ void FirstFrame(SDL_Window *window) {
     Vec3 settings_size = sdl_window_size * Vec3 {0.25, 0.75};
     Vec3 settings_pos = (sdl_window_size - settings_size) * Vec3 {0.975, 0.5};
     
-    Vec3 stats_size {settings_size.x, 0};
-    Vec3 stats_pos {sdl_window_size.x * 0.025f, settings_pos.y};
+    Vec3 image_size {sdl_window_size * 0.75f};
+    Vec3 image_pos {Vec3{0.025f, 0.05f} * sdl_window_size};
 
-    Vec3 image_size {sdl_window_size.min2D() * 0.75f};
-    Vec3 image_pos {0.5f * (sdl_window_size - image_size)};
+    Vec3 stats_size {settings_size.x, 0};
+    Vec3 stats_pos {sdl_window_size.x * 0.025f, sdl_window_size.y * 0.75f};
 
     ImGui::SetWindowPos("Settings", settings_pos, ImGuiCond_Once);
     ImGui::SetWindowSize("Settings", settings_size, ImGuiCond_Once);
@@ -668,7 +636,7 @@ bool GUI::MouseClickedOnFilm(SDL_MouseButtonEvent mouse) {
     Vec3 window_pos = ImGui::FindWindowByName("Image")->Pos;
 
     Vec3 min = window_pos + render_image_pos;
-    Vec3 max = min + render_image_size;
+    Vec3 max = min + film->GetBaseSize();
 
     int x = mouse.x;
     int y = mouse.y;
@@ -689,7 +657,7 @@ Vec3 GUI::ScreenToFilmCoordinates(SDL_MouseButtonEvent mouse) {
     Vec3 film_space_mouse = Vec3(mouse.x, mouse.y) - film_pos;
 
     // Get the ratio of the true film size to the displayed image
-    Vec3 scale = film->GetSize() / render_image_size;
+    Vec3 scale = film->GetSize() / film->GetBaseSize();
 
     film_space_mouse *= scale;
 

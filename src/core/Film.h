@@ -48,6 +48,10 @@ public:
         return {float(width), float(height)};
     }
 
+    Vec3 GetBaseSize() const {
+        return {float(base_width), float(base_height)};
+    }
+
     int GetWidth() const {
         return width;
     }

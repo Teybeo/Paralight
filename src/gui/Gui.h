@@ -56,7 +56,6 @@ public:
     bool ProcessEvent(SDL_Event* event);
 
     bool MouseClickedOnFilm(SDL_MouseButtonEvent event);
-
     Vec3 ScreenToFilmCoordinates(SDL_MouseButtonEvent mouse);
 };
 
