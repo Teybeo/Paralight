@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <array>
 
 int GetAdapativeScale(float time);
 

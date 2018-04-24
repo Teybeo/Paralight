@@ -5,6 +5,7 @@
 
 #include <SDL_timer.h>
 #include <algorithm>
+#include <array>
 #include "app/Chronometer.h"
 
 int BVH2::ray_bbox_test_count;

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <array>
 
 using std::unique_ptr;
 using std::shared_ptr;
