@@ -1,17 +1,20 @@
 cmake_minimum_required(VERSION 3.3)
 project(Paralight)
 
+#TODO: Drop 32 bit support ?
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-list(APPEND COMMON_FLAGS -fopenmp)
+option(BUILD_64_BIT "Build as 64 bit" ON)
+option(USE_OPENMP "Use OpenMP to parallelize the CPU renderer")
 
-# Workaround gcc 7.2 segfault in debug
-#list(APPEND COMMON_FLAGS -save-temps)
+if (USE_OPENMP)
+    list(APPEND COMMON_FLAGS -fopenmp)
+    set(DEFINITIONS USE_OPENMP)
+endif()
 
-set(BUILD_64_BIT "ON")
-set(DEFINITIONS USE_OPENMP)
 #list(APPEND DEFINITIONS USE_TRIGO_LOOKUP)
 set(DEFINITIONS ${DEFINITIONS} __CL_ENABLE_EXCEPTIONS)
 
@@ -88,12 +91,15 @@ endif()
 
 ############ SDL paths ############
 
+set(SDL_BASE_DIR "$ENV{HOME}/.brew/Cellar/sdl2/2.0.8")
+#set(SDL_BASE_DIR "D:/Dev/Lib/SDL2-2.0.3/x86_64-w64-mingw32/")
+
 if (BUILD_64_BIT)
-    set(SDL_INCLUDE_DIR "D:/Dev/Lib/SDL2-2.0.3/x86_64-w64-mingw32/include/SDL2")
-    set(SDL_LIB_DIR     "D:/Dev/Lib/SDL2-2.0.3/x86_64-w64-mingw32/lib")
+    set(SDL_INCLUDE_DIR "${SDL_BASE_DIR}/include/SDL2")
+    set(SDL_LIB_DIR     "${SDL_BASE_DIR}/lib")
 else()
-    set(SDL_INCLUDE_DIR "D:/Dev/Lib/SDL2-2.0.3/i686-w64-mingw32/include/SDL2")
-    set(SDL_LIB_DIR     "D:/Dev/Lib/SDL2-2.0.3/i686-w64-mingw32/lib")
+    set(SDL_INCLUDE_DIR "${SDL_BASE_DIR}/include/SDL2")
+    set(SDL_LIB_DIR     "${SDL_BASE_DIR}/lib")
 endif()
 
 find_library(SDL_LIBRARY
@@ -103,12 +109,15 @@ find_library(SDL_LIBRARY
 
 ############ SDL_image paths ############
 
+set(SDL_IMG_BASE_DIR "$ENV{HOME}/.brew/Cellar/sdl2_image/2.0.3")
+#set(SDL_IMG_BASE_DIR "D:/Dev/Lib/SDL2_image-2.0.1/x86_64-w64-mingw32")
+
 if (BUILD_64_BIT)
-    set(SDL_IMG_INCLUDE_DIR "D:/Dev/Lib/SDL2_image-2.0.1/x86_64-w64-mingw32/include/SDL2")
-    set(SDL_IMG_LIB_DIR     "D:/Dev/Lib/SDL2_image-2.0.1/x86_64-w64-mingw32/lib")
+    set(SDL_IMG_INCLUDE_DIR "${SDL_IMG_BASE_DIR}/include/SDL2")
+    set(SDL_IMG_LIB_DIR     "${SDL_IMG_BASE_DIR}/lib")
 else()
-    set(SDL_IMG_INCLUDE_DIR "D:/Dev/Lib/SDL2_image-2.0.1/i686-w64-mingw32/include/SDL2")
-    set(SDL_IMG_LIB_DIR     "D:/Dev/Lib/SDL2_image-2.0.1/i686-w64-mingw32/lib")
+    set(SDL_IMG_INCLUDE_DIR "${SDL_IMG_BASE_DIR}/include/SDL2")
+    set(SDL_IMG_LIB_DIR     "${SDL_IMG_BASE_DIR}/lib")
 endif()
 
 find_library(SDL_IMG_LIBRARY
@@ -118,16 +127,15 @@ find_library(SDL_IMG_LIBRARY
 
 ############ Assimp paths ############
 
-set(ASSIMP_BASE_DIR "D:/Dev/Lib/assimp-4.1.0")
-
-#set(ASSIMP_INCLUDE_DIR "D:/Dev/Lib/assimp-3.2/include")
+set(ASSIMP_BASE_DIR "$ENV{HOME}/.brew/Cellar/assimp/4.1.0")
+#set(ASSIMP_BASE_DIR "D:/Dev/Lib/assimp-4.1.0")
 
 if (BUILD_64_BIT)
-    set(ASSIMP_INCLUDE_DIR "${ASSIMP_BASE_DIR}/cmake-build-release/include")
-    set(ASSIMP_LIB_DIR     "${ASSIMP_BASE_DIR}/cmake-build-release/code/")
+    set(ASSIMP_INCLUDE_DIR "${ASSIMP_BASE_DIR}/include/")
+    set(ASSIMP_LIB_DIR     "${ASSIMP_BASE_DIR}/lib/")
 else()
-    set(ASSIMP_INCLUDE_DIR "D:/Dev/Lib/assimp-master/cmake-build-release/include")
-    set(ASSIMP_LIB_DIR     "D:/Dev/Lib/assimp-master/cmake-build-release/code/")
+    set(ASSIMP_INCLUDE_DIR "${ASSIMP_BASE_DIR}/include")
+    set(ASSIMP_LIB_DIR     "${ASSIMP_BASE_DIR}/code/")
 endif()
 
 find_library(ASSIMP_LIBRARY
