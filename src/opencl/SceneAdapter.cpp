@@ -156,7 +156,7 @@ CLBrdf GetCLBrdf(const Material* material, map<TextureUbyte*, char>& texture_ind
     return cl_brdf;
 }
 
-template <typename T = float>
+template <typename T>
 void SetTextureParameter(map<TextureUbyte*, char>& texture_index_map, const shared_ptr<Texture>& tex, char& tex_index, T* scalar) {
 
     ValueTexture<T>* value_texture = dynamic_cast<ValueTexture<T>*>(tex.get());
