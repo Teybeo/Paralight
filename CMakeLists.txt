@@ -12,6 +12,7 @@ option(USE_OPENMP "Use OpenMP to parallelize the CPU renderer")
 
 if (USE_OPENMP)
     list(APPEND COMMON_FLAGS -fopenmp)
+    set(OPENMP_LIBRARY -fopenmp)
     set(DEFINITIONS USE_OPENMP)
 endif()
 
@@ -74,20 +75,23 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -g3")
 # The find_library will use the system32/OpenCL.dll which will generates linker warnings
 # This wasn't happening when linking to the NVIDIA dll but it has disapeared...
 
-set(OPENCL_INCLUDE_DIR "D:/Dev/Tools/Nvidia CUDA Toolkit 7.5/include")
+set(OPENCL_INCLUDE_DIR "~/42/CL/")
+set(OPENCL_LIBRARY "/System/Library/Frameworks/OpenCL.framework/OpenCL")
+
+#set(OPENCL_INCLUDE_DIR "D:/Dev/Tools/Nvidia CUDA Toolkit 7.5/include")
 #set(OPENCL_LIB_DIR "D:/Dev/Tools/Nvidia CUDA Toolkit 7.5/lib/64")
 #
 #find_library(OPENCL_LIBRARY
-#        NAMES OPENCL
+#        NAMES OpenCL
 #        HINTS ${OPENCL_LIB_DIR}
 #        NO_DEFAULT_PATH
 #        )
 
-if (BUILD_64_BIT)
-    set(OPENCL_LIBRARY "C:/Program Files/NVIDIA Corporation/OpenCL/OpenCL64.dll")
-else()
-    set(OPENCL_LIBRARY "C:/Program Files/NVIDIA Corporation/OpenCL/OpenCL.dll")
-endif()
+#if (BUILD_64_BIT)
+#    set(OPENCL_LIBRARY "C:/Program Files/NVIDIA Corporation/OpenCL/OpenCL64.dll")
+#else()
+#    set(OPENCL_LIBRARY "C:/Program Files/NVIDIA Corporation/OpenCL/OpenCL.dll")
+#endif()
 
 ############ SDL paths ############
 
@@ -143,6 +147,10 @@ find_library(ASSIMP_LIBRARY
         HINTS ${ASSIMP_LIB_DIR}
         NO_DEFAULT_PATH)
 
+############ OpenGL ############
+
+find_package(OpenGL REQUIRED)
+
 #############################
 
 set(LIBRARIES
@@ -150,9 +158,11 @@ set(LIBRARIES
         ${SDL_IMG_LIBRARY}
         ${OPENCL_LIBRARY}
         ${ASSIMP_LIBRARY}
-        opengl32
-        imm32
-        -fopenmp)
+#        opengl32
+#        imm32
+
+        ${OPENGL_gl_LIBRARY}
+        ${OPENMP_LIBRARY})
 
 set(INCLUDE_DIRS
         src

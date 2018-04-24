@@ -30,6 +30,11 @@ class GUI {
     std::vector<std::string> model_array;
     const char* env_map_dir = "../../envmaps/";
     const char* model_dir = "../../models/";
+#ifdef APPLE
+	const char* gui_font_path = "C:/Windows/Fonts/Consola.ttf";
+#else
+	const char* gui_font_path = "/System/Library/Fonts/Menlo.ttc";
+#endif
     int envmap_index = 0;
     int model_index = 0;
     bool options_has_changed = false;
@@ -57,6 +62,7 @@ public:
 
     bool MouseClickedOnFilm(SDL_MouseButtonEvent event);
     Vec3 ScreenToFilmCoordinates(SDL_MouseButtonEvent mouse);
+
 };
 
 

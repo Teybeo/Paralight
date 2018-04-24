@@ -2,8 +2,10 @@
 
 #include "ProgramBuilder.h"
 
-#define WIN32_LEAN_AND_MEAN 1
-#include <windows.h>
+#ifdef WIN32
+	#define WIN32_LEAN_AND_MEAN 1
+	#include <windows.h>
+#endif
 
 #include <algorithm>
 #include <iostream>
@@ -101,10 +103,10 @@ void Program::SetBuildOption(const char* build_option, bool enabled) {
         build_options.erase(build_option);
     }
 }
-
 /// Retrieves the last-write time in millisecondes of a file since 00:00
 uint32_t GetLastWriteTime(const char* filename)
 {
+#ifdef WIN32
     FILETIME ftCreate, ftAccess, ftWrite;
     SYSTEMTIME stUTC, stLocal;
     unsigned int writeTime = 0;
@@ -126,6 +128,7 @@ uint32_t GetLastWriteTime(const char* filename)
     CloseHandle(hFile);
 
     return writeTime;
+#endif
 }
 
 void Program::DumpBinaries(string filename) {

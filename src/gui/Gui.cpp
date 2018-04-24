@@ -10,7 +10,6 @@
 #include "imgui/imgui_plot_var.h"
 #include "imgui/imconfig.h"
 
-#include <GL/gl.h>
 #include <iostream>
 #include <SDL_opengl.h>
 #include "tinydir/tinydir.h"
@@ -31,8 +30,7 @@ GUI::GUI(Options* options, SDL_Window* window, BaseRenderer*& renderer, Scene* s
     // Setup ImGui binding
     ImGui_ImplSdl_Init(window);
     ImGuiIO& io = ImGui::GetIO();
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 14.0f);
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Consola.ttf", 15.0f);
+    io.Fonts->AddFontFromFileTTF(gui_font_path, 14.0f);
 
     cout << io.Fonts->Fonts.size() << " fonts" << endl;
 
