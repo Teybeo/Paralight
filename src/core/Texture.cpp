@@ -13,9 +13,6 @@ using std::string;
 using std::cout;
 using std::endl;
 
-template class ImageTexture<float>;
-template class ImageTexture<uint8_t>;
-
 Vec3 SphericalToCartesian(const Vec3& direction) ;
 
 template <typename T>
@@ -229,3 +226,5 @@ string ImageTexture<T>::GetName() {
     return path;
 }
 
+template class ImageTexture<float>;
+template class ImageTexture<uint8_t>;
