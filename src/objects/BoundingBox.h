@@ -27,7 +27,7 @@ public:
 
     SurfaceData GetSurfaceData(Vec3 pos, Vec3 ray_direction) const override;
 
-    virtual BoundingBox ComputeBBox() const override;
+	BoundingBox ComputeBBox() const override;
 
     BoundingBox& ExtendsBy(const Vec3& point) {
 
@@ -45,7 +45,7 @@ public:
         return ExtendsBy(other.min).ExtendsBy(other.max);
     }
 
-    Vec3 GetCenter() const {
+	Vec3 GetCenter() const override {
         return (min + max) / 2.f;
     }
 

@@ -14,11 +14,11 @@ public:
 
     ~CppRenderer() override;
 
-    void Render();
+    void Render() override;
 
     void Update() override;
 
-    void TracePixel(Vec3 pixel, bool picking);
+    void TracePixel(Vec3 pixel, bool picking) override;
 
     Vec3 Raytrace(Ray ray, bool debug_pixel = false);
 

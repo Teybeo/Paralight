@@ -72,7 +72,7 @@ public:
 
     void Update() override;
 
-    void TracePixel(Vec3 pixel, bool picking);
+    void TracePixel(Vec3 pixel, bool picking) override;
 
     const OpenCLPlatformList& getPlatformList() const {
         return platform_list;

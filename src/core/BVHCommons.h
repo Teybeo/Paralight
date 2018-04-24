@@ -2,7 +2,6 @@
 #define PATHTRACER_BVHCOMMONS_H
 
 #include <objects/BoundingBox.h>
-#include <bits/unique_ptr.h>
 #include <vector>
 
 typedef struct Object3D Object3D;

@@ -19,9 +19,9 @@ public:
 
     bool Intersect(const Ray& ray, float& dist_out) const override;
 
-    virtual BoundingBox ComputeBBox() const override;
+	BoundingBox ComputeBBox() const override;
 
-    virtual Vec3 GetCenter() const;
+	Vec3 GetCenter() const override;
 
     void setRadius(float i);
 };

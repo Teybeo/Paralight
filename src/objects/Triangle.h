@@ -37,14 +37,14 @@ public:
 
     SurfaceData GetSurfaceData(Vec3 pos, Vec3 ray_direction) const override;
 
-    virtual BoundingBox ComputeBBox() const;
+	BoundingBox ComputeBBox() const override;
 
-    virtual Vec3 GetCenter() const;
+	Vec3 GetCenter() const override;
 
     friend class OpenCLRenderer;
 
     friend CLObject3D GetCLObject3D(const Object3D& object);
-    
+
     friend std::ostream& operator<< (std::ostream& out, const Triangle& tri);
 };
 
