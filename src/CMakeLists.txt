@@ -62,11 +62,6 @@ set(SOURCE_FILES ${SOURCE_FILES}
 #        lights_unused/Light.cpp lights_unused/Light.h
 #        lights_unused/PointLight.cpp lights_unused/PointLight.h)
 
-message("---- Source files ----")
-foreach(src ${SOURCE_FILES})
-    message("${src}")
-endforeach()
-
 message("---- Include directories ----")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${dirs})
