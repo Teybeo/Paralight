@@ -88,22 +88,25 @@ void BaseRenderer::DumpScreenshot() {
 void BaseRenderer::KeyEvent(SDL_Keysym keysym, SDL_EventType type) {
 
     if (type == SDL_KEYUP) {
-
-        switch (keysym.sym) {
-            case SDLK_1:
-            case SDLK_2:
-                SDL_Event event;
+        SDL_Event event {};
+        switch (keysym.scancode) {
+            case SDL_SCANCODE_1:
                 event.type = SDL_USEREVENT;
-                event.user.code = keysym.sym == SDLK_1 ? EVENT_CPP_RENDERER : EVENT_CL_RENDERER;
+                event.user.code = EVENT_CPP_RENDERER;
                 SDL_PushEvent(&event);
                 break;
-            case SDLK_r:
+            case SDL_SCANCODE_2:
+                event.type = SDL_USEREVENT;
+                event.user.code = EVENT_CL_RENDERER;
+                SDL_PushEvent(&event);
+                break;
+            case SDL_SCANCODE_R:
                 reset_camera = true;
                 break;
-            case SDLK_p:
+            case SDL_SCANCODE_P:
                 dump_screenshot = true;
                 break;
-            case SDLK_0:
+            case SDL_SCANCODE_0:
                 debug =! debug;
                 break;
             default:

@@ -3,20 +3,20 @@
 void CameraControls::KeyEvent(SDL_Keysym keysym, SDL_EventType action) {
 
     bool state = (action == SDL_KEYDOWN);
-    switch (keysym.sym) {
-        case SDLK_z:
+    switch (keysym.scancode) {
+        case SDL_SCANCODE_W:
             move_forward = state;
             break;
-        case SDLK_s:
+        case SDL_SCANCODE_S:
             move_backward = state;
             break;
-        case SDLK_q:
+        case SDL_SCANCODE_A:
             strafe_left = state & (control_mode != ORBIT);
             break;
-        case SDLK_d:
+        case SDL_SCANCODE_D:
             strafe_right = state & (control_mode != ORBIT);
             break;
-        case SDLK_ESCAPE:
+        case SDL_SCANCODE_ESCAPE:
             if (relative_mode && action == SDL_KEYUP) {
                 SDL_SetRelativeMouseMode(SDL_FALSE);
                 relative_mode = false;
@@ -26,11 +26,11 @@ void CameraControls::KeyEvent(SDL_Keysym keysym, SDL_EventType action) {
                 relative_mode = true;
             }
             break;
-        case SDLK_c:
+        case SDL_SCANCODE_C:
             if (action == SDL_KEYUP)
                 std::cout << "Cam at: {" << position << "}, xz_angle: " << xz_angle << ", yz_angle: " << yz_angle << std::endl;
             break;
-        case SDLK_o:
+        case SDL_SCANCODE_O:
             if (action == SDL_KEYUP) {
                 control_mode = static_cast<ControlMode>(!control_mode); // Bit hacky
             }

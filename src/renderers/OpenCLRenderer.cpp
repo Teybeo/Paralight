@@ -407,14 +407,14 @@ void OpenCLRenderer::KeyEvent(SDL_Keysym keysym, SDL_EventType type) {
 
     if (type == SDL_KEYUP) {
 
-        switch (keysym.sym) {
-            case SDLK_k:
+        switch (keysym.scancode) {
+            case SDL_SCANCODE_K:
                 reload_kernel = true;
                 break;
-            case SDLK_b:
+            case SDL_SCANCODE_B:
                 update_option = true;
                 break;
-            case SDLK_f:
+            case SDL_SCANCODE_F:
                 use_fast_math =! use_fast_math;
                 update_option = true;
                 cout << "OpenCL fast math set to " << use_fast_math << endl;
