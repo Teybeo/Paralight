@@ -87,7 +87,7 @@ float3 Trace(Ray ray, global Node2* bvh_root, global Object3D* objects, VERTEX_D
 #ifdef USE_BVH
         int index = BVHFindNearestIntersection(ray, bvh_root, objects, VERTEX_GEOM_DATA, &dist);
 #else
-//        int index = FindNearestObject(ray, objects, VERTEX_GEOM_DATA, &dist, options);
+        int index = FindNearestObject(ray, objects, VERTEX_GEOM_DATA, &dist, options);
 #endif
         // The current ray didn't hit any objects, return a "sky" color
         if (index == -1) {
@@ -153,7 +153,7 @@ void kernel Intersect(global int* hit_object_index, constant float2* coord, glob
 #ifdef USE_BVH
     index = BVHFindNearestIntersection(ray, bvh_root, objects, VERTEX_GEOM_DATA, &dist);
 #else
-//    index = FindNearestObject(ray, objects, VERTEX_GEOM_DATA, &dist, options);
+    index = FindNearestObject(ray, objects, VERTEX_GEOM_DATA, &dist, options);
 #endif
 
 //    DEBUG_PIXEL(coord[0].x, coord[0].y)
@@ -161,9 +161,26 @@ void kernel Intersect(global int* hit_object_index, constant float2* coord, glob
 
     *hit_object_index = index;
 }
+
+int FindNearestObject(const Ray ray, global Object3D* objects, VERTEX_GEOM_DATA_ARGS, float* nearest_dist, constant Options* options)
+{
+    int index = -1;
+    float dist;
+
+    int i;
+    for (i = 0; i < options->object_count; i++)
+    {
+        if (IntersectObj(objects[i], VERTEX_GEOM_DATA, ray, &dist) && (dist < *nearest_dist)) {
+            index = i;
+            *nearest_dist = dist;
+        }
+    }
+    return index;
+}
+
 /*
 //TODO: The objects are expected to be sorted by type, spheres first, planes second
-int FindNearestObject(const Ray ray, global Object3D* objects, VERTEX_GEOM_DATA_ARGS, float* nearest_dist, constant Options* options) {
+int FindNearestObjectOLD(const Ray ray, global Object3D* objects, VERTEX_GEOM_DATA_ARGS, float* nearest_dist, constant Options* options) {
 
     int index = -1;
     float dist;

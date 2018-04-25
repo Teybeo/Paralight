@@ -388,7 +388,8 @@ void OpenCLRenderer::UpdateOptionsBuffer() {
     clOptions.use_distant_env_lighting = options->use_distant_env_lighting;
     clOptions.brdf_bitfield            = options->brdf_bitfield;
     clOptions.use_tonemapping          = options->use_tonemapping;
-    clOptions.triangle_count           = std::min(100, scene->GetTriangleCount());
+//    clOptions.triangle_count           = std::min(100, scene->GetTriangleCount());
+    clOptions.object_count             = int(scene->objects.size());
     clOptions.sample_count             = options->sample_count;
     clOptions.bounce_count             = options->bounce_cout;
     clOptions.debug                    = debug;

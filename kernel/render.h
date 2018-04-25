@@ -20,7 +20,7 @@ typedef struct Options {
     float3 origin;                      // [0  - 15]
     mat4x4 rotation;                    // [16 - 79]
     float fov;                          // [80 - 83]
-    int triangle_count;                 // [92 - 95]
+    int object_count;                   // [92 - 95]
     short sample_count;                 // [96 - 97]
     short bounce_count;                 // [98 - 99]
     short frame_number;                 // [100 - 101]

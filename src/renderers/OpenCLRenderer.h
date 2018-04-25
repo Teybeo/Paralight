@@ -16,7 +16,7 @@ struct CLOptions {
     char pad4[4];
     Matrix rotation;
     float fov;
-    int triangle_count;
+    int object_count;
     short sample_count;
     short bounce_count;
     short frame_number;
