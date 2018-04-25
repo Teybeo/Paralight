@@ -5,6 +5,8 @@
 #ifdef WIN32
 	#define WIN32_LEAN_AND_MEAN 1
 	#include <windows.h>
+#elif __APPLE__
+	#include <sys/stat.h>
 #endif
 
 #include <algorithm>
@@ -130,6 +132,13 @@ uint32_t GetLastWriteTime(const char* filename)
     CloseHandle(hFile);
 
     return writeTime;
+#elif __APPLE__
+	struct stat s = {};
+	stat(filename, &s);
+	uint32_t time = static_cast<uint32_t>(s.st_mtimespec.tv_sec);
+	return time;
+#else
+	return 0;
 #endif
 }
 
