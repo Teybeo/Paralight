@@ -7,18 +7,18 @@
 #include "bvh.h"
 
 // IMPORTANT: per the spec, float3 == float4 for size and alignement
-typedef struct float4x4 {
+typedef struct mat4x4 {
     float3 x;
     float3 y;
     float3 z;
     float3 w;
-} float4x4;
+} mat4x4;
 
 // Max type of this struct is float3 (aka float4)
 // So aligned on 16 bytes
 typedef struct Options {
     float3 origin;                      // [0  - 15]
-    float4x4 rotation;                  // [16 - 79]
+    mat4x4 rotation;                    // [16 - 79]
     float fov;                          // [80 - 83]
     int triangle_count;                 // [92 - 95]
     short sample_count;                 // [96 - 97]

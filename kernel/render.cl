@@ -198,7 +198,7 @@ int FindNearestObject(const Ray ray, global Object3D* objects, VERTEX_GEOM_DATA_
     return index;
 }
 */
-float3 mul(float3 vec, constant float4x4* mat);
+float3 mul(float3 vec, constant mat4x4* mat);
 
 Ray PrimaryRay(float x, float y, int width, int height, constant Options* options) {
     Ray ray;
@@ -213,7 +213,7 @@ Ray PrimaryRay(float x, float y, int width, int height, constant Options* option
     return ray;
 }
 
-float3 mul(float3 vec, constant float4x4* mat)  {
+float3 mul(float3 vec, constant mat4x4* mat)  {
     float3 new_vec = vec;
     new_vec.x = dot(mat->x, vec);
     new_vec.y = dot(mat->y, vec);

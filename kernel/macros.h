@@ -5,7 +5,7 @@
    so use native_cos instead which is correct */
 // No effect on Nvidia with -fast-relaxed-math
 
-#if 1
+#if 0
 #define cos native_cos
 #define sin native_sin
 #define sqrt native_sqrt
