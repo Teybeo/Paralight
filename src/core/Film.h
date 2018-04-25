@@ -12,7 +12,7 @@ private:
     std::vector<uint32_t> pixels;
     int base_width = 500;
     int base_height = 500;
-    float render_scale = 1.0f;
+    float render_scale = 0.5f;
     int width = std::lround(base_width * render_scale);
     int height = std::lroundf(base_height * render_scale);
     bool is_dirty = false;
