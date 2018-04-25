@@ -21,7 +21,7 @@ using std::shared_ptr;
 
 // Path to the be searched for #include header
 const string SOURCE_DIR = "../../kernel";
-const string INCLUDE_ARG = " -I " + SOURCE_DIR + " ";
+const string INCLUDE_ARG = "-I " + SOURCE_DIR + " ";
 
 // Retrieves the last-write time in millisecondes of a file since 00:00
 uint32_t GetLastWriteTime(const char* filename);
@@ -29,7 +29,7 @@ uint32_t GetLastWriteTime(const char* filename);
 Program::Program(vector<string> file_array, const set<string>& _build_options)
         : build_options{_build_options}
 {
-    build_options.insert(build_options.begin(), INCLUDE_ARG);
+    build_options.insert(INCLUDE_ARG);
 
     for (const auto& build_option : build_options) {
         std::cout << build_option << std::endl;
@@ -43,7 +43,9 @@ Program::Program(vector<string> file_array, const set<string>& _build_options)
 
 void Program::Build(cl::Context context, cl::Device device) {
 
-    string serialized_build_options = std::accumulate(build_options.begin(), build_options.end(), string());
+	string serialized_build_options;
+	for (const auto& build_option : build_options)
+		serialized_build_options.append(build_option + " ");
 
     ProgramBuilder builder {serialized_build_options.c_str(), context, device};
 

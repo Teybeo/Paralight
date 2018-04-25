@@ -136,8 +136,8 @@ void OpenCLRenderer::Update() {
 
     if (update_option) {
 
-        program.SetBuildOption(" -D USE_BVH", options->use_bvh);
-        program.SetBuildOption(" -cl-fast-relaxed-math", use_fast_math);
+        program.SetBuildOption("-D USE_BVH", options->use_bvh);
+        program.SetBuildOption("-cl-fast-relaxed-math", use_fast_math);
 
         reload_kernel = true;
         update_option = false;
@@ -177,20 +177,20 @@ void OpenCLRenderer::Update() {
 Program CreateProgram(cl::Context& context, cl::CommandQueue& queue, cl::Device& device, const Options* options) {
 
     set<string> build_options = {
-            " -cl-std=CL1.2",
-            " -cl-fast-relaxed-math",
-//            " -cl-unsafe-math-optimizations",
-//            " -cl-single-precision-constant",
-//            " -cl-no-signed-zeros -cl-mad-enable -Werror",
-//            " -save-temps=binary", // AMD specific
+            "-cl-std=CL1.2",
+            "-cl-fast-relaxed-math",
+//            "-cl-unsafe-math-optimizations",
+//            "-cl-single-precision-constant",
+//            "-cl-no-signed-zeros -cl-mad-enable -Werror",
+//            "-save-temps=binary", // AMD specific
     };
 
     if (options->use_bvh)
-        build_options.insert(" -D USE_BVH");
-//    build_options.insert(" -cl-opt-disable");
-//    build_options.insert(" -src-in-ptx");
-//    build_options.insert(" -cl-nv-opt-level=0");
-//    build_options.insert(" -cl-nv-maxrregcount=30");
+        build_options.insert("-D USE_BVH");
+//    build_options.insert("-cl-opt-disable");
+//    build_options.insert("-src-in-ptx");
+//    build_options.insert("-cl-nv-opt-level=0");
+//    build_options.insert("-cl-nv-maxrregcount=30");
 
     vector<string> source_array = {
             "tonemap.cl",
